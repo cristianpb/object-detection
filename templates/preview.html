@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title></title>
+    <meta charset="utf-8"/>
+    <style>
+    body {
+        margin: 0;
+        background-color: #333;
+    }
+    .image {
+        display: block;
+        margin: 2em auto;
+        background-color: #444;
+        box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    }
+    img {
+        display: block;
+    }
+    </style>
+    <link rel="stylesheet" href="/static/css/bulma.min.css">
+    <script src="/static/js/jquery-1.10.2.min.js" charset="utf-8"></script>
+    <script src="/static/js/jquery.unveil.js" charset="utf-8"></script>
+    <script>
+      $(document).ready(function() {
+        $('img').unveil();
+      });
+    </script>
+  </head>
+  <body>
+    <div class="columns is-multiline">
+      {% for image in images %}
+      <div class="column is-4-desktop is-12-mobile">
+        <a class="image" href="{{ image.src }}" style="width: {{ image.width }}px; height: {{ image.height }}px">
+          <img src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" data-src="{{ image.src }}?w={{ image.width }}&amp;h={{ image.height }}" width="{{ image.width }}" height="{{ image.height }}" />
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </body>
+</html>

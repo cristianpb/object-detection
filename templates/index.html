@@ -1,9 +1,26 @@
-<html>
+<!DOCTYPE html>
+<html> 
   <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Video Streaming Demonstration</title>
+    <meta charset="utf-8"/>
+    <link rel="stylesheet" href="/static/css/bulma.min.css">
+    <script src="/static/js/jquery-1.10.2.min.js" charset="utf-8"></script>
+    <script src="/static/js/jquery.unveil.js" charset="utf-8"></script>
+    <script>
+      $(document).ready(function() {
+        $('img').unveil();
+      });
+    </script>
   </head>
   <body>
-    <h1>Video Streaming Demonstration</h1>
+    <section class="hero is-primary">
+      <div class="hero-body">
+        <div class="container">
+          <h1 class="title">Video Streaming Demonstration</h1>
+        </div>
+      </div>
+    </section>
     <img src="{{ url_for('video_feed') }}">
   </body>
 </html>

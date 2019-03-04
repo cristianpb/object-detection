@@ -1,20 +1,25 @@
-#!/usr/bin/env python
-from importlib import import_module
+#!/usr/bin/env python3
 import os
-from flask import Flask, render_template, Response, render_template_string, send_from_directory, request
-from PIL import Image
 import cv2
 import time
 import threading
+from io import BytesIO
+from PIL import Image
+from flask import Flask, render_template, Response, render_template_string, send_from_directory, request
+
 from ssd_detection import SSD
 ssd = SSD()
 
+WIDTH = 640
+HEIGHT = 480
+
 # Raspberry Pi camera module (requires picamera package)
-#from camera_pi import Camera
-from camera_opencv import Camera
+from camera_pi import Camera, CameraPred, CameraStatic, CaptureContinous
+
+# Webcam camera usin opencv module
+#from camera_opencv import Camera, CameraPred, CaptureContinous
 
 app = Flask(__name__)
-
 
 @app.route('/<path:filename>')
 def image(filename):
@@ -39,8 +44,6 @@ def image(filename):
 
 @app.route('/images')
 def images():
-    WIDTH = 640
-    HEIGHT = 640
     images = []
     for root, dirs, files in os.walk('.'):
         for filename in [os.path.join(root, name) for name in files]:
@@ -71,7 +74,6 @@ def test():
     filename_input = "./static/imgs/image.jpeg"
     filename_output = "./static/imgs/image_box.jpg"
     image = cv2.imread(filename_input)
-    ssd = SSD()
     output = ssd.prediction(image)
     output = ssd.filter_prediction(output)
     image = ssd.draw_boxes(image, output)
@@ -86,6 +88,25 @@ def test():
         'images': images
     })
 
+@app.route('/picam')
+def picam():
+    for frame in CameraStatic(WIDTH, HEIGHT):
+        image = frame.array
+        filename_output = "./static/imgs/webcam.jpg"
+        output = ssd.prediction(image)
+        output = ssd.filter_prediction(output)
+        image = ssd.draw_boxes(image, output)
+        cv2.imwrite(filename_output,image)
+        height, width, _ = image.shape
+        images = [{
+                    'width': int(width),
+                    'height': int(height),
+                    'src': filename_output
+                }]
+        break
+    return render_template("preview.html", **{
+        'images': images
+    })
 
 @app.route('/webcam')
 def webcam():
@@ -95,7 +116,6 @@ def webcam():
     ret, image = video_capture.read()
     time.sleep(2)
     filename_output = "./static/imgs/webcam.jpg"
-    ssd = SSD()
     output = ssd.prediction(image)
     output = ssd.filter_prediction(output)
     image = ssd.draw_boxes(image, output)
@@ -114,7 +134,7 @@ def webcam():
 @app.route('/')
 def index():
     """Video streaming home page."""
-    return render_template('output.html')
+    return render_template('index.html')
 
 
 def gen(camera):
@@ -124,44 +144,21 @@ def gen(camera):
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
-#@app.route('/stream')
-#def static_output():
-#    return render_template('index.html')
-
-
 @app.route('/video_feed')
 def video_feed():
     """Video streaming route. Put this in the src attribute of an img tag."""
-    #cam = Camera()
-    #return Response(gen(cam),
     return Response(gen(Camera()),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
-def job():
-    print("READING")
-    ssd = SSD()
-    filename_output = "./static/imgs/outputcv.jpg"
-    while(1):
-        print("REAdiNG")
-        cap = cv2.VideoCapture(0)
-        # Capture frame-by-frame
-        ret, image = cap.read()
-        output = ssd.prediction(image)
-        output = ssd.filter_prediction(output)
-        image = ssd.draw_boxes(image, output)
-        cv2.imwrite(filename_output,image)
-        height, width, _ = image.shape
-        images = [{
-                    'width': int(width),
-                    'height': int(height),
-                    'src': filename_output
-                }]
-        cap.release()
-        time.sleep(2)
+@app.route('/video_pred')
+def video_pred():
+    """Video streaming route. Put this in the src attribute of an img tag."""
+    return Response(gen(CameraPred()),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
+
 
 if __name__ == '__main__':
-    thread = threading.Thread(target=job)
+    thread = threading.Thread(target=CaptureContinous)
     thread.start()
     app.run(host='0.0.0.0', threaded=True)
-    #app.run(host='127.0.0.1', threaded=True)

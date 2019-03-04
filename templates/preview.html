@@ -32,7 +32,7 @@
     <div class="columns is-multiline">
       {% for image in images %}
       <div class="column is-4-desktop is-12-mobile">
-        <a class="image" href="{{ image.src }}" style="width: {{ image.width }}px; height: {{ image.height }}px">
+        <a class="image" href="{{ image.src }}">
           <img src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" data-src="{{ image.src }}?w={{ image.width }}&amp;h={{ image.height }}" width="{{ image.width }}" height="{{ image.height }}" />
         </a>
       </div>

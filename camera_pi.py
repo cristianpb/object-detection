@@ -1,4 +1,5 @@
 import io
+import time
 from datetime import datetime
 import picamera
 from picamera.array import PiRGBArray
@@ -90,3 +91,4 @@ def CaptureContinous():
             filename_output = "./static/imgs/{}.jpg".format(datetime.now().strftime("%Y%m%d_%H%M%S"))
             cv2.imwrite(filename_output,image)
         rawCapture.truncate(0)
+        time.sleep(20)

@@ -39,7 +39,7 @@ class SSD():
         for detection in output:
             class_id = detection[1]
             confidence = detection[2]
-            class_name = self.id_class_name(class_id,LABEL_MAP)
+            class_name = self.id_class_name(class_id)
             print("--> Detected: ({}:{}) - Score: {:.2f}".format(class_id, class_name,  confidence))
             box_x = detection[3] * image_width
             box_y = detection[4] * image_height
@@ -49,15 +49,15 @@ class SSD():
             cv2.rectangle(
                     image, (int(box_x), int(box_y)),
                     (int(box_width), int(box_height)),
-                    color, thickness=2)
+                    color, thickness=6)
             cv2.putText(
-                    image, "{}:{:.2f}".format(class_name, confidence), (int(box_x + 0.001*image_width), int(box_y+.05*image_height)),
-                    cv2.FONT_HERSHEY_SIMPLEX, (0.001*image_width), color, 2)
+                    image, "{}:{:.2f}".format(class_name, confidence), (int(box_x + 0.001*image_width), int(box_y+.01*image_height)),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
         print("Print bouding boxes {:.4f} s".format(time.time() - start))
         return image
 
-    def id_class_name(self, class_id, classes):
-        for key, value in classes.items():
+    def id_class_name(self, class_id):
+        for key, value in LABEL_MAP.items():
             if class_id == key:
                 return value
 

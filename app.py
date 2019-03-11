@@ -45,27 +45,50 @@ def image(filename):
 @app.route('/images')
 def images():
     images = []
-    for root, dirs, files in os.walk('.'):
-        for filename in [os.path.join(root, name) for name in files]:
-            if not filename.endswith('.jpg'):
+    myclass = request.args.get('class', None)
+    myhour = request.args.get('hour', None)
+    myday = request.args.get('day', None)
+    image_folder = './static/imgs/pi'
+    hours = set()
+    days = set()
+    _objects = set()
+    for filename in os.listdir(image_folder):
+        if not filename.endswith('.jpg'):
+            continue
+        year, hour, objects, _ = filename.split("_")
+        hours.add(hour[:2])
+        days.add(year[6:])
+        [_objects.add(x) for x in objects.split("-")]
+        filename = os.path.join(image_folder, filename)
+        if myclass:
+            if myclass not in objects.split("-"):
                 continue
-            im = Image.open(filename)
-            w, h = im.size
-            aspect = 1.0*w/h
-            if aspect > 1.0*WIDTH/HEIGHT:
-                width = min(w, WIDTH)
-                height = width/aspect
-            else:
-                height = min(h, HEIGHT)
-                width = height*aspect
-            images.append({
-                'width': int(width),
-                'height': int(height),
-                'src': filename
-            })
+        if myhour:
+            if myhour != hour[:2]:
+                continue
+        if myday:
+            if myday != year[6:]:
+                continue
+        im = Image.open(filename)
+        w, h = im.size
+        aspect = 1.0*w/h
+        if aspect > 1.0*WIDTH/HEIGHT:
+            width = min(w, WIDTH)
+            height = width/aspect
+        else:
+            height = min(h, HEIGHT)
+            width = height*aspect
+        images.append({
+            'width': int(width),
+            'height': int(height),
+            'src': filename
+        })
 
     return render_template("preview.html", **{
-        'images': images
+        'images': images,
+        'days': list(days),
+        'hours': list(hours),
+        'objects': list(_objects)
     })
 
 

@@ -53,7 +53,6 @@ class Camera(BaseCamera):
 
 def CaptureContinous():
     while(1):
-        print("Capturing")
         cap = cv2.VideoCapture(0)
         # Capture frame-by-frame
         ret, image = cap.read()
@@ -61,7 +60,9 @@ def CaptureContinous():
         output = ssd.filter_prediction(output)
         if len(output) > 0:
             image = ssd.draw_boxes(image, output)
-            filename_output = "./static/imgs/{}.jpg".format(datetime.now().strftime("%Y%m%d_%H%M%S"))
+            classes = [ssd.id_class_name(detection[1]) for detection in output]
+            today = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename_output = "./static/imgs/webcam/{}_{}_.jpg".format(today, "-".join(classes))
             cv2.imwrite(filename_output,image)
         cap.release()
-        time.sleep(60)
+        time.sleep(20)

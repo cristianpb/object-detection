@@ -1,5 +1,58 @@
 <!DOCTYPE html>
 <html>
+  <nav class="navbar" role="navigation" aria-label="main navigation">
+    <div class="navbar-brand">
+
+      <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+      </a>
+    </div>
+
+  <div id="navbarBasicExample" class="navbar-menu">
+    <div class="navbar-start">
+      <div class="navbar-item has-dropdown is-hoverable">
+        <a class="navbar-link">
+          Objects
+        </a>
+        <div class="navbar-dropdown">
+          {% for object in objects %}
+          <a class="navbar-item" href="/images?class={{object}}">
+            {{ object }}
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="navbar-item has-dropdown is-hoverable">
+        <a class="navbar-link">
+          Days
+        </a>
+        <div class="navbar-dropdown">
+          {% for day in days %}
+          <a class="navbar-item" href="/images?day={{day}}">
+            {{ day }}
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="navbar-item has-dropdown is-hoverable">
+        <a class="navbar-link">
+          Hours
+        </a>
+        <div class="navbar-dropdown">
+          {% for hour in hours %}
+          <a class="navbar-item" href="/images?hour={{hour}}">
+            {{ hour }}
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+
+
+    </div>
+  </div>
+  </nav>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title></title>
@@ -23,6 +76,31 @@
     <script src="/static/js/jquery-1.10.2.min.js" charset="utf-8"></script>
     <script src="/static/js/jquery.unveil.js" charset="utf-8"></script>
     <script>
+      document.addEventListener('DOMContentLoaded', () => {
+
+        // Get all "navbar-burger" elements
+        const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
+
+        // Check if there are any navbar burgers
+        if ($navbarBurgers.length > 0) {
+
+          // Add a click event on each of them
+          $navbarBurgers.forEach( el => {
+            el.addEventListener('click', () => {
+
+              // Get the target from the "data-target" attribute
+              const target = el.dataset.target;
+              const $target = document.getElementById(target);
+
+              // Toggle the "is-active" class on both the "navbar-burger" and the "navbar-menu"
+              el.classList.toggle('is-active');
+              $target.classList.toggle('is-active');
+
+            });
+          });
+        }
+
+      });
       $(document).ready(function() {
         $('img').unveil();
       });

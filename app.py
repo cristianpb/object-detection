@@ -92,25 +92,6 @@ def images():
     })
 
 
-@app.route('/test')
-def test():
-    filename_input = "./static/imgs/image.jpeg"
-    filename_output = "./static/imgs/image_box.jpg"
-    image = cv2.imread(filename_input)
-    output = ssd.prediction(image)
-    output = ssd.filter_prediction(output)
-    image = ssd.draw_boxes(image, output)
-    cv2.imwrite(filename_output,image)
-    height, width, _ = image.shape
-    images = [{
-                'width': int(width),
-                'height': int(height),
-                'src': filename_output
-            }]
-    return render_template("preview.html", **{
-        'images': images
-    })
-
 @app.route('/picam')
 def picam():
     for frame in CameraStatic(WIDTH, HEIGHT):

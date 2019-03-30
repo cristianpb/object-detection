@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import glob
 import cv2
 import time
 import threading
@@ -10,8 +11,8 @@ from flask import Flask, render_template, Response, render_template_string, send
 from ssd_detection import SSD
 ssd = SSD()
 
-WIDTH = 640
-HEIGHT = 480
+WIDTH = 320
+HEIGHT = 240
 
 # Raspberry Pi camera module (requires picamera package)
 from camera_pi import Camera, CameraPred, CameraStatic, CaptureContinous
@@ -23,18 +24,21 @@ app = Flask(__name__)
 
 @app.route('/<path:filename>')
 def image(filename):
-    try:
-        w = int(request.args['w'])
-        h = int(request.args['h'])
-    except (KeyError, ValueError):
-        return send_from_directory('.', filename)
+    w = request.args.get('w', None)
+    h = request.args.get('h', None)
+    date = request.args.get('date', None)
 
     try:
-        im = Image.open(filename)
-        im.thumbnail((w, h), Image.ANTIALIAS)
-        io = BytesIO()
-        im.save(io, format='JPEG')
-        return Response(io.getvalue(), mimetype='image/jpeg')
+        im = cv2.imread(filename)
+        if w and h:
+            w, h = int(w), int(h)
+            im = cv2.resize(im, (w, h))
+        if date:
+            img_h, img_w = im.shape[:-1]
+            cv2.putText(
+                    im, "{}".format(date), (0, int(img_h*0.98)),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2)
+        return Response(cv2.imencode('.jpg', im)[1].tobytes(), mimetype='image/jpeg')
 
     except IOError:
         abort(404)
@@ -45,42 +49,41 @@ def image(filename):
 @app.route('/images')
 def images():
     images = []
-    myclass = request.args.get('class', None)
+    myclasses = request.args.getlist('class', None)
     myhour = request.args.get('hour', None)
-    myday = request.args.get('day', None)
-    image_folder = './static/imgs/pi'
+    mydate = request.args.get('date', None)
+    myday = None
+    if mydate:
+        myday = mydate[3:5]
+    image_folder = './imgs/'
     hours = set()
     days = set()
     _objects = set()
-    for filename in os.listdir(image_folder):
-        if not filename.endswith('.jpg'):
+    for filename in glob.iglob(image_folder + '**/*.jpg', recursive=True):
+        base = os.path.basename(filename)
+        if not base.endswith('.jpg'):
             continue
-        year, hour, objects, _ = filename.split("_")
-        hours.add(hour[:2])
-        days.add(year[6:])
-        [_objects.add(x) for x in objects.split("-")]
-        filename = os.path.join(image_folder, filename)
-        if myclass:
-            if myclass not in objects.split("-"):
-                continue
-        if myhour:
-            if myhour != hour[:2]:
-                continue
-        if myday:
-            if myday != year[6:]:
-                continue
-        im = Image.open(filename)
-        w, h = im.size
-        aspect = 1.0*w/h
-        if aspect > 1.0*WIDTH/HEIGHT:
-            width = min(w, WIDTH)
-            height = width/aspect
-        else:
-            height = min(h, HEIGHT)
-            width = height*aspect
+        year, hour = None, None
+        if len(base.split("_")) == 4:
+            year, hour, objects, _ = base.split("_")
+            hours.add(hour[:2])
+            days.add(year[6:])
+            [_objects.add(x) for x in objects.split("-")]
+            if len(myclasses) > 0:
+                list_intersection  = [value for value in myclasses if value in objects.split("-")]
+                if len(list_intersection) == 0:
+                    continue
+            if myhour:
+                if myhour != hour[:2]:
+                    continue
+            if myday:
+                if myday != year[6:]:
+                    continue
+
         images.append({
-            'width': int(width),
-            'height': int(height),
+            'width': int(WIDTH),
+            'height': int(HEIGHT),
+            'date': "{}_{}".format(year, hour),
             'src': filename
         })
 

@@ -46,38 +46,42 @@
   </head>
   <body>
     <div class="container">
-    <div class="columns">
-      <div class="column is-4-desktop is-12-mobile">
-
-        <form method="get" action="/images">
-          <div class="field">
-            <label class="label">Date</label>
-            <div class="control">
-              <input type="date" name="date" id="mycal">
-            </div>
-          </div>
-          <div class="field">
-            <label class="label">Objects</label>
-            <div class="control">
-              <div class="select is-multiple">
-                <select name="class" multiple size="{{ objects|length }}">
-                  {% for object in objects %}
-                  <option value="{{object}}">{{ object }}</option>
-                  {% endfor %}
-                </select>
+      <div class="columns">
+        <div class="column is-4-desktop is-12-mobile">
+          <form method="get" action="/images">
+            <div class="field">
+              <label class="label">Date</label>
+              <div class="control">
+                <input type="date" name="date" id="mycal">
               </div>
             </div>
-          </div>
-          <button type="submit">Search</button>
-        </form>
+            <div class="field">
+              <label class="label">Objects</label>
+              <div class="control">
+                <div class="select is-multiple">
+                  <select name="class" multiple size="{{ objects|length }}">
+                    {% for object in objects %}
+                    <option value="{{object}}">{{ object }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+            <button class="button" type="submit">Search</button>
+          </form>
+        </div>
       </div>
-    </div>
     </div>
     <div class="columns is-multiline">
       {% for image in images %}
       <div class="column is-4-desktop is-12-mobile">
-        <a class="image" href="{{ image.src }}?date={{ image.date }}">
-          <img src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" data-src="{{ image.src }}?w={{ image.width }}&amp;h={{ image.height }}&amp;date={{ image.date }}"  />
+        <a class="image" href="{{ image.src }}?date={{ image.date.strftime('%Y%m%d_%H%M%S') }}">
+          <figure>
+            <img src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" data-src="{{ image.src }}?w={{ image.width }}&amp;h={{ image.height }}&amp;date={{ image.date.strftime('%Y%m%d_%H%M%S') }}"  />
+            {% if image.date %}
+            <figcaption> {{ image.date.strftime('%d %b %-H:%M') }} </figcaption>
+            {% endif %}
+          </figure>
         </a>
       </div>
       {% endfor %}

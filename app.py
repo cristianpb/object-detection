@@ -4,6 +4,7 @@ import glob
 import cv2
 import time
 import threading
+from datetime import datetime
 from io import BytesIO
 from PIL import Image
 from flask import Flask, render_template, Response, render_template_string, send_from_directory, request
@@ -33,15 +34,19 @@ def image(filename):
         if w and h:
             w, h = int(w), int(h)
             im = cv2.resize(im, (w, h))
-        if date:
+        elif date:
+            date = (datetime
+                    .strptime(date, "%Y%m%d_%H%M%S")
+                    .strftime("%d %b %-H:%M")
+                    )
             img_h, img_w = im.shape[:-1]
             cv2.putText(
                     im, "{}".format(date), (0, int(img_h*0.98)),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2)
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
         return Response(cv2.imencode('.jpg', im)[1].tobytes(), mimetype='image/jpeg')
 
-    except IOError:
-        abort(404)
+    except Exception as e:
+        print(e)
 
     return send_from_directory('.', filename)
 
@@ -61,7 +66,7 @@ def images():
     _objects = set()
     for filename in glob.iglob(image_folder + '**/*.jpg', recursive=True):
         base = os.path.basename(filename)
-        if not base.endswith('.jpg'):
+        if not base.endswith('.jpg') or base in ['image_box.jpg', 'image_box_text.jpg']:
             continue
         year, hour = None, None
         if len(base.split("_")) == 4:
@@ -79,11 +84,12 @@ def images():
             if myday:
                 if myday != year[6:]:
                     continue
+            year = datetime.strptime("{}_{}".format(year, hour), "%Y%m%d_%H%M%S")
 
         images.append({
             'width': int(WIDTH),
             'height': int(HEIGHT),
-            'date': "{}_{}".format(year, hour),
+            'date': year,
             'src': filename
         })
 

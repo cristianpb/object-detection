@@ -27,8 +27,9 @@ class SSD():
         start = time.time()
         final_detection = list()
         for detection in output[0, 0, :, :]:
+            class_id = detection[1]
             confidence = detection[2]
-            if confidence > THRESHOLD:
+            if confidence > THRESHOLD and class_id in [1, 3, 6, 16, 17, 18]:
                 final_detection.append(detection)
         print("Filter predictions {:.4f} s".format(time.time() - start))
         return final_detection
@@ -51,7 +52,7 @@ class SSD():
                     (int(box_width), int(box_height)),
                     color, thickness=6)
             cv2.putText(
-                    image, "{}:{:.2f}".format(class_name, confidence), (int(box_x + 0.001*image_width), int(box_y+.01*image_height)),
+                    image, "{}:{:.2f}".format(class_name, confidence), (int(box_x + 0.01*image_width), int(box_y+.05*image_height)),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
         print("Print bouding boxes {:.4f} s".format(time.time() - start))
         return image

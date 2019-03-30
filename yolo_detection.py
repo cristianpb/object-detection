@@ -14,10 +14,10 @@ class YOLO():
     def __init__(self):
         start = time.time()
         self.model = cv2.dnn.readNetFromDarknet(
-                'models/yolo/yolov3.cfg',
-                'models/yolo/yolov3.weights')
-                #'models/yolo/yolov3-tiny.cfg',
-                #'models/yolo/yolov3-tiny.weights')
+                #'models/yolo/yolov3.cfg',
+                #'models/yolo/yolov3.weights')
+                'models/yolo/yolov3-tiny.cfg',
+                'models/yolo/yolov3-tiny.weights')
         self.colors = np.random.uniform(0, 255, size=(100, 3))
         print("Loading model in: {:.3f} s".format(time.time() - start))
 
@@ -81,7 +81,7 @@ class YOLO():
 
                 # draw a bounding box rectangle and label on the image
                 color = self.colors[int(class_ids[i])]
-                cv2.rectangle(image, (x, y), (x + w, y + h), color, 2)
+                cv2.rectangle(image, (x, y), (x + w, y + h), color, 6)
                 text = "{}: {:.3f}".format(class_name, confidences[i])
                 cv2.putText(image, text, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX,
                             0.5, color, 2)
@@ -95,4 +95,16 @@ class YOLO():
 
 
 if __name__ == "__main__":
-    pass
+    start = time.time()
+    image = cv2.imread("./static/imgs/image.jpeg")
+    print("Reaing image {}".format(time.time() - start))
+
+    yolo = YOLO()
+    output, image_width, image_height = yolo.prediction(image)
+    indices, boxes, confidences, class_ids = yolo.filter_prediction(
+            output, image_width, image_height)
+    image = yolo.draw_boxes(image, indices, boxes, confidences, class_ids)
+
+    start = time.time()
+    cv2.imwrite("./static/imgs/outputcv.jpg", image)
+    print("Writing img {:.2f}".format(time.time() - start))

@@ -62,4 +62,15 @@ class SSD():
                 return value
 
 if __name__ == "__main__":
-    pass
+    start = time.time()
+    image = cv2.imread("./static/imgs/image.jpeg")
+    print("Reaing image {}".format(time.time() - start))
+
+    ssd = SSD()
+    output = ssd.prediction(image)
+    output = ssd.filter_prediction(output)
+    image = ssd.draw_boxes(image, output)
+
+    start = time.time()
+    cv2.imwrite("./static/imgs/outputcv.jpg", image)
+    print("Writing img {:.2f}".format(time.time() - start))

@@ -96,7 +96,7 @@ def images():
 def picam():
     for frame in CameraStatic(WIDTH, HEIGHT):
         image = frame.array
-        filename_output = "./static/imgs/webcam.jpg"
+        filename_output = "./imgs/webcam.jpg"
         output = ssd.prediction(image)
         output = ssd.filter_prediction(output)
         image = ssd.draw_boxes(image, output)
@@ -119,7 +119,7 @@ def webcam():
     time.sleep(2)
     ret, image = video_capture.read()
     time.sleep(2)
-    filename_output = "./static/imgs/webcam.jpg"
+    filename_output = "./imgs/webcam.jpg"
     output = ssd.prediction(image)
     output = ssd.filter_prediction(output)
     image = ssd.draw_boxes(image, output)

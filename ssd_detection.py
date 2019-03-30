@@ -63,7 +63,7 @@ class SSD():
 
 if __name__ == "__main__":
     start = time.time()
-    image = cv2.imread("./static/imgs/image.jpeg")
+    image = cv2.imread("./imgs/image.jpeg")
     print("Reaing image {}".format(time.time() - start))
 
     ssd = SSD()
@@ -72,5 +72,5 @@ if __name__ == "__main__":
     image = ssd.draw_boxes(image, output)
 
     start = time.time()
-    cv2.imwrite("./static/imgs/outputcv.jpg", image)
+    cv2.imwrite("./imgs/outputcv.jpg", image)
     print("Writing img {:.2f}".format(time.time() - start))

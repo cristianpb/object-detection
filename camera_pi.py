@@ -90,7 +90,7 @@ def CaptureContinous():
             image = ssd.draw_boxes(image, output)
             classes = [ssd.id_class_name(detection[1]) for detection in output]
             today = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename_output = "./static/imgs/pi/{}_{}_.jpg".format(today, "-".join(classes))
+            filename_output = "./imgs/pi/{}_{}_.jpg".format(today, "-".join(classes))
             cv2.imwrite(filename_output,image)
         rawCapture.truncate(0)
         time.sleep(20)

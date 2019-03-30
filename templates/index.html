@@ -1,26 +1,37 @@
 <!DOCTYPE html>
 <html> 
+   <nav class="navbar is-primary" role="navigation" aria-label="main navigation">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="/">
+          Home
+      </a>
+      <a class="navbar-item" href="/images">
+          Images
+      </a>
+      <a class="navbar-item" href="/video_feed">
+          Video
+      </a>
+
+      <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+      </a>
+    </div>
+  </nav>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Video Streaming Demonstration</title>
+    <title>Object detection</title>
     <meta charset="utf-8"/>
     <link rel="stylesheet" href="/static/css/bulma.min.css">
-    <script src="/static/js/jquery-1.10.2.min.js" charset="utf-8"></script>
-    <script src="/static/js/jquery.unveil.js" charset="utf-8"></script>
-    <script>
-      $(document).ready(function() {
-        $('img').unveil();
-      });
-    </script>
   </head>
   <body>
     <section class="hero is-primary">
       <div class="hero-body">
         <div class="container">
-          <h1 class="title">Video Streaming Demonstration</h1>
+          <h1 class="title">Object detection</h1>
         </div>
       </div>
     </section>
-    <img src="{{ url_for('video_feed') }}">
   </body>
 </html>

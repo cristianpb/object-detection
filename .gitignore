@@ -3,3 +3,5 @@ __pycache__
 static/imgs/*
 .ipynb_checkpoints
 .sshyncignore
+*.pb
+*.weights

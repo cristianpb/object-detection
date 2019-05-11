@@ -1,77 +1,73 @@
+import os
+import json
 import cv2
 import numpy as np
-import time
-from models.ssd_mobilenet.ssd_labels import LABEL_MAP
+import pandas as pd
+from utils import timeit
 
 THRESHOLD = 0.5
+DETECTION_MODEL = 'ssd_mobilenet/'
+SWAPRB = True
+
+with open(os.path.join('models', DETECTION_MODEL, 'labels.json')) as json_data:
+    CLASS_NAMES = json.load(json_data)
+
 
 class SSD():
     """Class ssd"""
 
+    @timeit
     def __init__(self):
-        start = time.time()
         self.model = cv2.dnn.readNetFromTensorflow(
                 'models/ssd_mobilenet/frozen_inference_graph.pb',
                 'models/ssd_mobilenet/ssd_mobilenet_v2_coco_2018_03_29.pbtxt')
         self.colors = np.random.uniform(0, 255, size=(100, 3))
-        print("Loading model in: {:.3f} s".format(time.time() - start))
 
+    @timeit
     def prediction(self, image):
-        start = time.time()
-        self.model.setInput(cv2.dnn.blobFromImage(image, size=(300, 300), swapRB=True))
+        self.model.setInput(cv2.dnn.blobFromImage(image, size=(300, 300), swapRB=SWAPRB))
         output = self.model.forward()
-        print("Model inference {:.2f} s".format(time.time() - start))
-        return output
+        result = output[0, 0, :, :]
+        return result
 
-    def filter_prediction(self, output):
-        start = time.time()
-        final_detection = list()
-        for detection in output[0, 0, :, :]:
-            class_id = detection[1]
-            confidence = detection[2]
-            if confidence > THRESHOLD and class_id in [1, 3, 6, 16, 17, 18]:
-                final_detection.append(detection)
-        print("Filter predictions {:.4f} s".format(time.time() - start))
-        return final_detection
+    @timeit
+    def filter_prediction(self, output, image):
+        height, width = image.shape[:-1]
+        df = pd.DataFrame(
+                output,
+                columns=[
+                    '_', 'class_id', 'confidence', 'x1', 'y1', 'x2', 'y2'])
+        df = df.assign(
+                x1=lambda x: (x['x1'] * width).astype(int).clip(0),
+                y1=lambda x: (x['y1'] * height).astype(int).clip(0),
+                x2=lambda x: (x['x2'] * width).astype(int),
+                y2=lambda x: (x['y2'] * height).astype(int),
+                class_name=lambda x: (
+                    x['class_id'].apply(lambda y: CLASS_NAMES[str(int(y))])),
+                label=lambda x: (
+                    x.class_name + ': ' + (
+                        x['confidence'].astype(str).str.slice(stop=4)
+                        )
+                    )
+                )
+        df = df[df['confidence'] > THRESHOLD]
+        return df
 
-    def draw_boxes(self, image, output):
-        image_height, image_width, _ = image.shape
-        start = time.time()
-        for detection in output:
-            class_id = detection[1]
-            confidence = detection[2]
-            class_name = self.id_class_name(class_id)
-            print("--> Detected: ({}:{}) - Score: {:.2f}".format(class_id, class_name,  confidence))
-            box_x = detection[3] * image_width
-            box_y = detection[4] * image_height
-            box_width = detection[5] * image_width
-            box_height = detection[6] * image_height
-            color = self.colors[int(class_id)]
-            cv2.rectangle(
-                    image, (int(box_x), int(box_y)),
-                    (int(box_width), int(box_height)),
-                    color, thickness=6)
-            cv2.putText(
-                    image, "{}:{:.2f}".format(class_name, confidence), (int(box_x + 0.01*image_width), int(box_y+.05*image_height)),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
-        print("Print bouding boxes {:.4f} s".format(time.time() - start))
+    def draw_boxes(self, image, df):
+        for idx, box in df.iterrows():
+            print('--> Detected: ({}:{}) - Score: {:.3f}'.format(box['class_id'], box['class_name'], box['confidence']))
+            color = self.colors[int(box['class_id'])]
+            cv2.rectangle(image, (box['x1'], box['y1']), (box['x2'], box['y2']), color, 6)
+            cv2.putText(image, box['label'], (box['x1'], box['y1'] - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
         return image
 
-    def id_class_name(self, class_id):
-        for key, value in LABEL_MAP.items():
-            if class_id == key:
-                return value
 
 if __name__ == "__main__":
-    start = time.time()
     image = cv2.imread("./imgs/image.jpeg")
-    print("Reaing image {}".format(time.time() - start))
 
     ssd = SSD()
     output = ssd.prediction(image)
-    output = ssd.filter_prediction(output)
-    image = ssd.draw_boxes(image, output)
+    df = ssd.filter_prediction(output, image)
+    image = ssd.draw_boxes(image, df)
 
-    start = time.time()
     cv2.imwrite("./imgs/outputcv.jpg", image)
-    print("Writing img {:.2f}".format(time.time() - start))

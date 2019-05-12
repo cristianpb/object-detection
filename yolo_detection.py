@@ -29,7 +29,7 @@ def filter_yolo(chunk):
     return df
 
 
-class YOLO():
+class Detector():
     """Class yolo"""
 
     @timeit
@@ -95,9 +95,9 @@ class YOLO():
 if __name__ == "__main__":
     image = cv2.imread("./imgs/image.jpeg")
 
-    yolo = YOLO()
-    output = yolo.prediction(image)
-    df = yolo.filter_prediction(output, image)
-    image = yolo.draw_boxes(image, df)
+    detector = Detector()
+    output = detector.prediction(image)
+    df = detector.filter_prediction(output, image)
+    image = detector.draw_boxes(image, df)
 
     cv2.imwrite("./imgs/outputcv.jpg", image)

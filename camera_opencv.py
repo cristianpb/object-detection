@@ -3,8 +3,9 @@ import cv2
 import time
 from datetime import datetime
 from base_camera import BaseCamera
-from ssd_detection import SSD
-ssd = SSD()
+from ssd_detection import Detector
+# from yolo_detection import Detector
+detector = Detector()
 
 IMAGE_FOLDER = "./imgs"
 
@@ -25,10 +26,10 @@ class CameraPred(BaseCamera):
             # read current frame
             _, img = camera.read()
 
-            # Prediction 
-            output = ssd.prediction(img)
-            output = ssd.filter_prediction(output)
-            img = ssd.draw_boxes(img, output)
+            # Prediction
+            output = detector.prediction(img)
+            df = detector.filter_prediction(output, img)
+            img = detector.draw_boxes(img, df)
 
             # encode as a jpeg image and return it
             yield cv2.imencode('.jpg', img)[1].tobytes()
@@ -60,14 +61,14 @@ def CaptureContinous():
         cap = cv2.VideoCapture(0)
         # Capture frame-by-frame
         ret, image = cap.read()
-        output = ssd.prediction(image)
-        df = ssd.filter_prediction(output, image)
+        output = detector.prediction(image)
+        df = detector.filter_prediction(output, image)
         if len(df) > 0:
             day = datetime.now().strftime("%Y%m%d")
             directory = os.path.join(IMAGE_FOLDER, 'webcam', day)
             if not os.path.exists(directory):
                 os.makedirs(directory)
-            image = ssd.draw_boxes(image, df)
+            image = detector.draw_boxes(image, df)
             classes = df['class_name'].unique().tolist()
             hour = datetime.now().strftime("%H%M%S")
             filename_output = os.path.join(directory, "{}_{}_.jpg".format(hour, "-".join(classes)))

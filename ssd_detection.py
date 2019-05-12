@@ -13,7 +13,7 @@ with open(os.path.join('models', DETECTION_MODEL, 'labels.json')) as json_data:
     CLASS_NAMES = json.load(json_data)
 
 
-class SSD():
+class Detector():
     """Class ssd"""
 
     @timeit
@@ -65,9 +65,9 @@ class SSD():
 if __name__ == "__main__":
     image = cv2.imread("./imgs/image.jpeg")
 
-    ssd = SSD()
-    output = ssd.prediction(image)
-    df = ssd.filter_prediction(output, image)
-    image = ssd.draw_boxes(image, df)
+    detector = Detector()
+    output = detector.prediction(image)
+    df = detector.filter_prediction(output, image)
+    image = detector.draw_boxes(image, df)
 
     cv2.imwrite("./imgs/outputcv.jpg", image)

@@ -9,8 +9,9 @@ import numpy as np
 import cv2
 from base_camera import BaseCamera
 
-from ssd_detection import SSD
-ssd = SSD()
+from ssd_detection import Detector
+# from yolo_detection import Detector
+detector = Detector()
 
 WIDTH = 640
 HEIGHT = 480
@@ -37,10 +38,10 @@ class CameraPred(BaseCamera):
                 _stream = stream.getvalue()
                 data = np.fromstring(_stream, dtype=np.uint8)
                 img = cv2.imdecode(data, 1)
-                # Prediction 
-                output = ssd.prediction(img)
-                output = ssd.filter_prediction(output)
-                img = ssd.draw_boxes(img, output)
+                # Prediction
+                output = detector.prediction(img)
+                df = detector.filter_prediction(output)
+                img = detector.draw_boxes(img, df)
                 yield cv2.imencode('.jpg', img)[1].tobytes()
 
                 # reset stream for next frame
@@ -65,17 +66,6 @@ class Camera(BaseCamera):
                 stream.truncate()
 
 
-def CameraStatic():
-    # Initialize Picamera and grab reference to the raw capture
-    camera = PiCamera()
-    camera.rotation = 180
-    camera.resolution = (WIDTH, HEIGHT)
-    camera.framerate = 10
-    rawCapture = PiRGBArray(camera, size=(WIDTH, HEIGHT))
-    rawCapture.truncate(0)
-    return camera.capture_continuous(rawCapture, format="bgr", use_video_port=True)
-
-
 def CaptureContinous():
     camera = PiCamera()
     camera.rotation = 180
@@ -85,14 +75,14 @@ def CaptureContinous():
     rawCapture.truncate(0)
     for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
         image = frame.array
-        output = ssd.prediction(image)
-        df = ssd.filter_prediction(output, image)
+        output = detector.prediction(image)
+        df = detector.filter_prediction(output, image)
         if len(df) > 0:
             day = datetime.now().strftime("%Y%m%d")
             directory = os.path.join(IMAGE_FOLDER, 'pi', day)
             if not os.path.exists(directory):
                 os.makedirs(directory)
-            image = ssd.draw_boxes(image, df)
+            image = detector.draw_boxes(image, df)
             classes = df['class_name'].unique().tolist()
             hour = datetime.now().strftime("%H%M%S")
             filename_output = os.path.join(directory, "{}_{}_.jpg".format(hour, "-".join(classes)))

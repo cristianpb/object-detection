@@ -3,34 +3,39 @@ import os
 import glob
 import cv2
 import time
+import json
+import collections
+from itertools import islice
 import threading
 from datetime import datetime
-from io import BytesIO
 from PIL import Image
-from flask import Flask, render_template, Response, render_template_string, send_from_directory, request
+from flask import (Flask, render_template,
+                   Response, send_from_directory, request)
 
 from ssd_detection import SSD
 ssd = SSD()
 
 WIDTH = 320
 HEIGHT = 240
+IMAGE_FOLDER = 'imgs'
 
 # Raspberry Pi camera module (requires picamera package)
-from camera_pi import Camera, CameraPred, CameraStatic, CaptureContinous
+#from camera_pi import Camera, CameraPred, CameraStatic, CaptureContinous
 
 # Webcam camera usin opencv module
-#from camera_opencv import Camera, CameraPred, CaptureContinous
+from camera_opencv import Camera, CameraPred, CaptureContinous
 
 app = Flask(__name__)
 
-@app.route('/<path:filename>')
+
+@app.route(os.path.join('/', IMAGE_FOLDER, '<path:filename>'))
 def image(filename):
     w = request.args.get('w', None)
     h = request.args.get('h', None)
     date = request.args.get('date', None)
 
     try:
-        im = cv2.imread(filename)
+        im = cv2.imread(os.path.join(IMAGE_FOLDER, filename))
         if w and h:
             w, h = int(w), int(h)
             im = cv2.resize(im, (w, h))
@@ -51,54 +56,22 @@ def image(filename):
     return send_from_directory('.', filename)
 
 
-@app.route('/images')
+@app.route('/api/images')
 def images():
-    images = []
-    myclasses = request.args.getlist('class', None)
-    myhour = request.args.get('hour', None)
+    page = int(request.args.get('page', 0))
+    page_size = int(request.args.get('page_size', 12))
     mydate = request.args.get('date', None)
-    myday = None
-    if mydate:
-        myday = mydate[3:5]
-    image_folder = './imgs/'
-    hours = set()
-    days = set()
-    _objects = set()
-    for filename in glob.iglob(image_folder + '**/*.jpg', recursive=True):
-        base = os.path.basename(filename)
-        if not base.endswith('.jpg') or base in ['image_box.jpg', 'image_box_text.jpg']:
-            continue
-        year, hour = None, None
-        if len(base.split("_")) == 4:
-            year, hour, objects, _ = base.split("_")
-            hours.add(hour[:2])
-            days.add(year[6:])
-            [_objects.add(x) for x in objects.split("-")]
-            if len(myclasses) > 0:
-                list_intersection  = [value for value in myclasses if value in objects.split("-")]
-                if len(list_intersection) == 0:
-                    continue
-            if myhour:
-                if myhour != hour[:2]:
-                    continue
-            if myday:
-                if myday != year[6:]:
-                    continue
-            year = datetime.strptime("{}_{}".format(year, hour), "%Y%m%d_%H%M%S")
-
-        images.append({
-            'width': int(WIDTH),
-            'height': int(HEIGHT),
-            'date': year,
-            'src': filename
-        })
-
-    return render_template("preview.html", **{
-        'images': images,
-        'days': list(days),
-        'hours': list(hours),
-        'objects': list(_objects)
-    })
+    if mydate is not None:
+        myiter = glob.iglob(os.path.join(IMAGE_FOLDER, '**', mydate, '*.jpg'),
+                            recursive=True)
+    else:
+        myiter = glob.iglob(os.path.join(IMAGE_FOLDER, '**', '*.jpg'),
+                            recursive=True)
+    start = page * page_size
+    end = (page + 1) * page_size
+    result = [i for i in islice(myiter, start, end)]
+    print('->> Start', start, 'end', end, 'len', len(result))
+    return json.dumps(result)
 
 
 @app.route('/picam')
@@ -121,6 +94,7 @@ def picam():
         'images': images
     })
 
+
 @app.route('/webcam')
 def webcam():
     video_capture = cv2.VideoCapture(0)
@@ -132,7 +106,7 @@ def webcam():
     output = ssd.prediction(image)
     output = ssd.filter_prediction(output)
     image = ssd.draw_boxes(image, output)
-    cv2.imwrite(filename_output,image)
+    cv2.imwrite(filename_output, image)
     height, width, _ = image.shape
     images = [{
                 'width': int(width),
@@ -144,10 +118,15 @@ def webcam():
         'images': images
     })
 
+
 @app.route('/')
-def index():
-    """Video streaming home page."""
-    return render_template('index.html')
+def status():
+    return send_from_directory('./dist', "index.html")
+
+
+@app.route('/<path:path>')
+def build(path):
+    return send_from_directory('./dist', path)
 
 
 def gen(camera):
@@ -156,6 +135,7 @@ def gen(camera):
         frame = camera.get_frame()
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
 
 @app.route('/video_feed')
 def video_feed():

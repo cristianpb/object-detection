@@ -1,9 +1,12 @@
+import os
 import cv2
 import time
 from datetime import datetime
 from base_camera import BaseCamera
 from ssd_detection import SSD
 ssd = SSD()
+
+IMAGE_FOLDER = "./imgs"
 
 class CameraPred(BaseCamera):
     video_source = 0
@@ -60,10 +63,14 @@ def CaptureContinous():
         output = ssd.prediction(image)
         df = ssd.filter_prediction(output, image)
         if len(df) > 0:
+            day = datetime.now().strftime("%Y%m%d")
+            directory = os.path.join(IMAGE_FOLDER, 'webcam', day)
+            if not os.path.exists(directory):
+                os.makedirs(directory)
             image = ssd.draw_boxes(image, df)
             classes = df['class_name'].unique().tolist()
-            today = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename_output = "./imgs/webcam/{}_{}_.jpg".format(today, "-".join(classes))
+            hour = datetime.now().strftime("%H%M%S")
+            filename_output = os.path.join(directory, "{}_{}_.jpg".format(hour, "-".join(classes)))
             cv2.imwrite(filename_output, image)
         cap.release()
         time.sleep(2)

@@ -1,3 +1,4 @@
+import os
 import io
 import time
 from datetime import datetime
@@ -13,6 +14,7 @@ ssd = SSD()
 
 WIDTH = 640
 HEIGHT = 480
+IMAGE_FOLDER = "./imgs"
 
 class CameraPred(BaseCamera):
     @staticmethod
@@ -82,15 +84,18 @@ def CaptureContinous():
     rawCapture = PiRGBArray(camera, size=(WIDTH, HEIGHT))
     rawCapture.truncate(0)
     for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
-        print("Capturing")
         image = frame.array
         output = ssd.prediction(image)
         df = ssd.filter_prediction(output, image)
         if len(df) > 0:
+            day = datetime.now().strftime("%Y%m%d")
+            directory = os.path.join(IMAGE_FOLDER, 'pi', day)
+            if not os.path.exists(directory):
+                os.makedirs(directory)
             image = ssd.draw_boxes(image, df)
             classes = df['class_name'].unique().tolist()
-            today = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename_output = "./imgs/pi/{}_{}_.jpg".format(today, "-".join(classes))
+            hour = datetime.now().strftime("%H%M%S")
+            filename_output = os.path.join(directory, "{}_{}_.jpg".format(hour, "-".join(classes)))
             cv2.imwrite(filename_output, image)
         rawCapture.truncate(0)
         time.sleep(20)

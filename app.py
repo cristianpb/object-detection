@@ -22,7 +22,7 @@ app = Flask(__name__)
 
 
 @app.route(os.path.join('/', IMAGE_FOLDER, '<path:filename>'))
-def image(filename):
+def image_preview(filename):
     w = request.args.get('w', None)
     h = request.args.get('h', None)
     date = request.args.get('date', None)
@@ -50,7 +50,7 @@ def image(filename):
 
 
 @app.route('/api/images')
-def images():
+def api_images():
     page = int(request.args.get('page', 0))
     page_size = int(request.args.get('page_size', 12))
     mydate = request.args.get('date', None)
@@ -71,6 +71,13 @@ def images():
 def status():
     return send_from_directory('./dist', "index.html")
 
+@app.route('/preview')
+def preview():
+    return send_from_directory('./dist', "index.html")
+
+@app.route('/single/path')
+def single(path):
+    return send_from_directory('./dist', "index.html")
 
 @app.route('/<path:path>')
 def build(path):

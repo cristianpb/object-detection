@@ -68,7 +68,7 @@ class Detector():
                 x2=lambda x: (x.x1 + x.w).astype(int),
                 y2=lambda x: (x.y1 + x.h).astype(int),
                 class_name=lambda x: (
-                    x['class_id'].apply(lambda x: CLASS_NAMES[str(int(x))])),
+                    x['class_id'].astype(int).astype(str).replace(CLASS_NAMES)),
                 label=lambda x: (
                     x.class_name + ': ' + (
                         x['confidence'].astype(str).str.slice(stop=4)

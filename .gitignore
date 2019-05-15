@@ -6,3 +6,5 @@ static/imgs/*
 *.pb
 *.weights
 .env
+dist
+imgs/outputcv.jpg

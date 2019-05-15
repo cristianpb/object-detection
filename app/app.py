@@ -101,17 +101,17 @@ def api_images():
 @app.route('/')
 @app.route('/preview')
 def status():
-    return send_from_directory('./dist', "index.html")
+    return send_from_directory('../dist', "index.html")
 
 
 @app.route('/single/<path:path>')
 def index(path):
-    return send_from_directory('./dist', "index.html")
+    return send_from_directory('../dist', "index.html")
 
 
 @app.route('/<path:path>')
 def build(path):
-    return send_from_directory('./dist', path)
+    return send_from_directory('../dist', path)
 
 
 def gen(camera):

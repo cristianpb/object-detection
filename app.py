@@ -3,22 +3,53 @@ import os
 import glob
 import cv2
 import json
+from importlib import import_module
 from itertools import islice
-import threading
+from dotenv import load_dotenv
 from datetime import datetime
 from flask import Flask, Response, send_from_directory, request
+from multiprocessing import Process
 
 WIDTH = 320
 HEIGHT = 240
 IMAGE_FOLDER = 'imgs'
+load_dotenv()
 
-# Raspberry Pi camera module (requires picamera package)
-#from camera_pi import Camera, CameraPred, CaptureContinous
-
-# Webcam camera usin opencv module
-from camera_opencv import Camera, CameraPred, CaptureContinous
+if os.getenv('CAMERA'):
+    Camera = import_module('camera_' + os.environ['CAMERA']).Camera
+    CameraPred = import_module('camera_' + os.environ['CAMERA']).CameraPred
+    CaptureContinous = import_module('camera_' + os.environ['CAMERA']).CaptureContinous
+else:
+    print('Default USB camera')
+    from camera_opencv import Camera, CameraPred, CaptureContinous
 
 app = Flask(__name__)
+
+
+@app.route('/terminate')
+def secret_route():
+    print('Terminating {} {}'.format(p.name, p.pid))
+    p.terminate()
+    p.join()
+    print(p, p.is_alive(), p.pid)
+    return json.dumps({
+        'is_alive': p.is_alive(),
+        'pid': p.pid,
+        'name': p.name
+        })
+
+
+@app.route('/begin')
+def begin_route():
+    global p
+    p = Process(target=CaptureContinous)
+    p.start()
+    print('Starting {} {}'.format(p.name, p.pid))
+    return json.dumps({
+        'is_alive': p.is_alive(),
+        'pid': p.pid,
+        'name': p.name
+        })
 
 
 @app.route(os.path.join('/', IMAGE_FOLDER, '<path:filename>'))
@@ -68,16 +99,15 @@ def api_images():
 
 
 @app.route('/')
+@app.route('/preview')
 def status():
     return send_from_directory('./dist', "index.html")
 
-@app.route('/preview')
-def preview():
+
+@app.route('/single/<path:path>')
+def index(path):
     return send_from_directory('./dist', "index.html")
 
-@app.route('/single/path')
-def single(path):
-    return send_from_directory('./dist', "index.html")
 
 @app.route('/<path:path>')
 def build(path):
@@ -107,6 +137,13 @@ def video_pred():
 
 
 if __name__ == '__main__':
-    thread = threading.Thread(target=CaptureContinous)
-    thread.start()
-    app.run(host='0.0.0.0', threaded=True)
+    if os.getenv('CAMERA') == 'pi':
+        p = Process(target=CaptureContinous)
+        p.start()
+        print("Starting recurrent photos", p.pid)
+    app.run(
+            host='0.0.0.0',
+            debug=bool(os.getenv('DEBUG')),
+            threaded=True,
+            port=int(str(os.getenv('PORT')))
+            )

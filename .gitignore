@@ -1,6 +1,9 @@
 __pycache__
+.cache
 .mypy_cache
 static/imgs/*
+flask_app.egg-info
+venv
 .ipynb_checkpoints
 .sshyncignore
 *.pb

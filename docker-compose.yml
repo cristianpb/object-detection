@@ -1,0 +1,18 @@
+---
+version: '2.3'
+services:
+  matchvec:
+    container_name: ${USER}-python
+    image: ${CI_REGISTRY_IMAGE}/python:${CI_COMMIT_SHA}
+    environment:
+      PYTHONUNBUFFERED: ${PYTHONUNBUFFERED:-null}
+      DEBUG: ${DEBUG}
+      CAMERA: ${CAMERA}
+      ports:
+        - ${APP_PORT}:5000
+      volumes:
+        # we mount our project so we can edit files and see the result live
+        - ./app/flask_app:/home/factory/flask_app
+        - ./app/dist:/home/factory/dist
+        - ./imgs:/home/factory/imgs
+        - ./models:/models

@@ -11,7 +11,7 @@ SCALE = 0.00392  # 1/255
 NMS_THRESHOLD = 0.4  # Non Maximum Supression threshold
 SWAPRB = True
 
-with open(os.path.join('./models', DETECTION_MODEL, 'labels.json')) as json_data:
+with open(os.path.join('/models', DETECTION_MODEL, 'labels.json')) as json_data:
     CLASS_NAMES = json.load(json_data)
 
 

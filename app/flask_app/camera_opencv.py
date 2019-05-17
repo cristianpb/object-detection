@@ -2,8 +2,8 @@ import os
 import cv2
 import time
 from datetime import datetime
-from base_camera import BaseCamera
-from ssd_detection import Detector
+from .base_camera import BaseCamera
+from .ssd_detection import Detector
 # from yolo_detection import Detector
 detector = Detector()
 

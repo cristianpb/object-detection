@@ -3,13 +3,13 @@ import json
 import cv2
 import numpy as np
 import pandas as pd
-from utils import timeit
+from .utils import timeit
 
 THRESHOLD = 0.5
 DETECTION_MODEL = 'ssd_mobilenet/'
 SWAPRB = True
 
-with open(os.path.join('models', DETECTION_MODEL, 'labels.json')) as json_data:
+with open(os.path.join('/models', DETECTION_MODEL, 'labels.json')) as json_data:
     CLASS_NAMES = json.load(json_data)
 
 
@@ -19,8 +19,8 @@ class Detector():
     @timeit
     def __init__(self):
         self.model = cv2.dnn.readNetFromTensorflow(
-                'models/ssd_mobilenet/frozen_inference_graph.pb',
-                'models/ssd_mobilenet/ssd_mobilenet_v2_coco_2018_03_29.pbtxt')
+                '/models/ssd_mobilenet/frozen_inference_graph.pb',
+                '/models/ssd_mobilenet/ssd_mobilenet_v2_coco_2018_03_29.pbtxt')
         self.colors = np.random.uniform(0, 255, size=(100, 3))
 
     @timeit

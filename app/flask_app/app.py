@@ -5,7 +5,6 @@ import cv2
 import json
 from importlib import import_module
 from itertools import islice
-from dotenv import load_dotenv
 from datetime import datetime
 from flask import Flask, Response, send_from_directory, request
 from multiprocessing import Process
@@ -13,15 +12,14 @@ from multiprocessing import Process
 WIDTH = 320
 HEIGHT = 240
 IMAGE_FOLDER = 'imgs'
-load_dotenv()
 
 if os.getenv('CAMERA'):
-    Camera = import_module('camera_' + os.environ['CAMERA']).Camera
-    CameraPred = import_module('camera_' + os.environ['CAMERA']).CameraPred
-    CaptureContinous = import_module('camera_' + os.environ['CAMERA']).CaptureContinous
+    Camera = import_module('.camera_' + os.environ['CAMERA'], package='flask_app').Camera
+    CameraPred = import_module('.camera_' + os.environ['CAMERA'], package='flask_app').CameraPred
+    CaptureContinous = import_module('.camera_' + os.environ['CAMERA'], package='flask_app').CaptureContinous
 else:
     print('Default USB camera')
-    from camera_opencv import Camera, CameraPred, CaptureContinous
+    from .camera_opencv import Camera, CameraPred, CaptureContinous
 
 app = Flask(__name__)
 
@@ -59,6 +57,7 @@ def image_preview(filename):
     date = request.args.get('date', None)
 
     try:
+        print(os.path.join(IMAGE_FOLDER, filename))
         im = cv2.imread(os.path.join(IMAGE_FOLDER, filename))
         if w and h:
             w, h = int(w), int(h)
@@ -145,5 +144,5 @@ if __name__ == '__main__':
             host='0.0.0.0',
             debug=bool(os.getenv('DEBUG')),
             threaded=True,
-            port=int(str(os.getenv('PORT')))
+            #port=int(str(os.getenv('PORT')))
             )

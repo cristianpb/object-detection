@@ -1,8 +1,8 @@
 import os
 import json
-import cv2
-import numpy as np
-import pandas as pd
+import cv2  # type: ignore
+import numpy as np  # type: ignore
+import pandas as pd  # type: ignore
 from .utils import timeit
 
 THRESHOLD = 0.5

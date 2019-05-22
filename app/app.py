@@ -79,6 +79,14 @@ def image_preview(filename):
 
     return send_from_directory('.', filename)
 
+@app.route('/api/delete', methods=['POST'])
+def delete_image():
+    filename = request.form.get('filename', None)
+    try:
+        os.remove(filename)
+        return json.dumps({'status': filename})
+    except:
+        return json.dumps({'status': 'Failed'})
 
 @app.route('/api/images')
 def api_images():

@@ -44,12 +44,14 @@ class Detector():
                 y2=lambda x: (x['y2'] * height).astype(int),
                 class_name=lambda x: (
                     x['class_id'].astype(int).astype(str).replace(CLASS_NAMES)),
-                label=lambda x: (
-                    x.class_name + ': ' + (
-                        x['confidence'].astype(str).str.slice(stop=4)
-                        )
-                    )
+                # TODO: python 3.5 fix
+                #label=lambda x: (
+                #    x.class_name + ': ' + (
+                #        x['confidence'].astype(str).str.slice(stop=4)
+                #        )
+                #    )
                 )
+        df['label'] = df['class_name'] + ': ' + df['confidence'].astype(str).str.slice(stop=4)
         df = df[df['confidence'] > THRESHOLD]
         return df
 

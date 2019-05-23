@@ -69,12 +69,14 @@ class Detector():
                 y2=lambda x: (x.y1 + x.h).astype(int),
                 class_name=lambda x: (
                     x['class_id'].astype(int).astype(str).replace(CLASS_NAMES)),
-                label=lambda x: (
-                    x.class_name + ': ' + (
-                        x['confidence'].astype(str).str.slice(stop=4)
-                        )
-                    )
+                # TODO: python 3.5 fix
+                #label=lambda x: (
+                #    x.class_name + ': ' + (
+                #        x['confidence'].astype(str).str.slice(stop=4)
+                #        )
+                #    )
                 )
+        df['label'] = df['class_name'] + ': ' + df['confidence'].astype(str).str.slice(stop=4)
         cols = ['x1', 'y1', 'w', 'h']
         indices = cv2.dnn.NMSBoxes(
                 df[cols].values.tolist(),

@@ -3,8 +3,10 @@ import cv2
 import time
 from datetime import datetime
 from base_camera import BaseCamera
-from ssd_detection import Detector
+# from ssd_detection import Detector
 # from yolo_detection import Detector
+# from cascade import Detector
+from motion import Detector
 detector = Detector()
 
 IMAGE_FOLDER = "./imgs"

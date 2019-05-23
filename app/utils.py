@@ -1,8 +1,12 @@
 """Utilities for logging."""
+import os
 import logging
 import time
 
-level = logging.DEBUG
+if os.getenv('DEBUG'):
+    level = logging.DEBUG
+else:
+    level = logging.ERROR
 logging.basicConfig(
         level=level,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',

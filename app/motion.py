@@ -52,6 +52,7 @@ class Detector():
                 x2=lambda x: (x['x1'] + x['w']),
                 y2=lambda x: (x['y1'] + x['h']),
                 label=lambda x: x.index.astype(str),
+                class_name=lambda x: x.index.astype(str),
                 )
         return df_filtered
 

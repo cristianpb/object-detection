@@ -7,7 +7,7 @@ from importlib import import_module
 from itertools import islice
 from dotenv import load_dotenv
 from datetime import datetime
-from flask import Flask, Response, send_from_directory, request
+from flask import Flask, Response, send_from_directory, request, abort
 from multiprocessing import Process
 
 WIDTH = 320
@@ -85,8 +85,9 @@ def delete_image():
     try:
         os.remove(filename)
         return json.dumps({'status': filename})
-    except:
-        return json.dumps({'status': 'Failed'})
+    except Exception as e:
+        print(e)
+        return abort(404)
 
 @app.route('/api/images')
 def api_images():

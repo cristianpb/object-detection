@@ -11,6 +11,8 @@ from base_camera import BaseCamera
 
 from ssd_detection import Detector
 # from yolo_detection import Detector
+# from motion import Detector
+
 detector = Detector()
 
 WIDTH = 640
@@ -40,7 +42,7 @@ class CameraPred(BaseCamera):
                 img = cv2.imdecode(data, 1)
                 # Prediction
                 output = detector.prediction(img)
-                df = detector.filter_prediction(output)
+                df = detector.filter_prediction(output, img)
                 img = detector.draw_boxes(img, df)
                 yield cv2.imencode('.jpg', img)[1].tobytes()
 

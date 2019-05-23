@@ -95,6 +95,11 @@ def api_images():
     page_size = int(request.args.get('page_size', 12))
     mydate = request.args.get('date', None)
     if mydate is not None:
+        mydate = (
+                datetime
+                .strptime(mydate, "%d/%m/%Y")
+                .strftime("%Y%m%d")
+                )
         myiter = glob.iglob(os.path.join(IMAGE_FOLDER, '**', mydate, '*.jpg'),
                             recursive=True)
     else:

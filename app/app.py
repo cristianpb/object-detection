@@ -28,6 +28,7 @@ app = Flask(__name__)
 
 @app.route('/terminate')
 def secret_route():
+    global p
     print('Terminating {} {}'.format(p.name, p.pid))
     p.terminate()
     p.join()
@@ -51,6 +52,14 @@ def begin_route():
         'name': p.name
         })
 
+
+@app.route('/status')
+def status_route():
+    return json.dumps({
+        'is_alive': p.is_alive(),
+        'pid': p.pid,
+        'name': p.name
+        })
 
 @app.route(os.path.join('/', IMAGE_FOLDER, '<path:filename>'))
 def image_preview(filename):
@@ -139,6 +148,10 @@ def gen(camera):
 @app.route('/video_feed')
 def video_feed():
     """Video streaming route. Put this in the src attribute of an img tag."""
+    global p
+    print('Terminating {} {}'.format(p.name, p.pid))
+    p.terminate()
+    p.join()
     return Response(gen(Camera()),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 

@@ -7,6 +7,7 @@ from picamera.array import PiRGBArray
 from picamera import PiCamera
 import numpy as np
 import cv2
+from pixels import pixels
 from base_camera import BaseCamera
 
 from ssd_detection import Detector
@@ -43,7 +44,9 @@ class CameraPred(BaseCamera):
                 # Prediction
                 output = detector.prediction(img)
                 df = detector.filter_prediction(output, img)
-                img = detector.draw_boxes(img, df)
+                if len(df) > 0:
+                    img = detector.draw_boxes(img, df)
+                    pixels.think()
                 yield cv2.imencode('.jpg', img)[1].tobytes()
 
                 # reset stream for next frame

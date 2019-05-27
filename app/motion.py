@@ -33,6 +33,7 @@ class Detector():
                 thresh.copy(), cv2.RETR_EXTERNAL,
                 cv2.CHAIN_APPROX_SIMPLE)
         cnts = imutils.grab_contours(cnts)
+        self.avg = image.copy().astype(float)
         return cnts
 
     @timeit

@@ -3,10 +3,10 @@ import cv2
 import time
 from datetime import datetime
 from base_camera import BaseCamera
-# from ssd_detection import Detector
+from ssd_detection import Detector
 # from yolo_detection import Detector
 # from cascade import Detector
-from motion import Detector
+# from motion import Detector
 detector = Detector()
 
 IMAGE_FOLDER = "./imgs"
@@ -66,14 +66,15 @@ def CaptureContinous():
         output = detector.prediction(image)
         df = detector.filter_prediction(output, image)
         if len(df) > 0:
-            day = datetime.now().strftime("%Y%m%d")
-            directory = os.path.join(IMAGE_FOLDER, 'webcam', day)
-            if not os.path.exists(directory):
-                os.makedirs(directory)
-            image = detector.draw_boxes(image, df)
-            classes = df['class_name'].unique().tolist()
-            hour = datetime.now().strftime("%H%M%S")
-            filename_output = os.path.join(directory, "{}_{}_.jpg".format(hour, "-".join(classes)))
-            cv2.imwrite(filename_output, image)
+            if df['class_name'].str.contains('person|bird|cat|wine glass|cup|sandwich').any():
+                day = datetime.now().strftime("%Y%m%d")
+                directory = os.path.join(IMAGE_FOLDER, 'webcam', day)
+                if not os.path.exists(directory):
+                    os.makedirs(directory)
+                image = detector.draw_boxes(image, df)
+                classes = df['class_name'].unique().tolist()
+                hour = datetime.now().strftime("%H%M%S")
+                filename_output = os.path.join(directory, "{}_{}_.jpg".format(hour, "-".join(classes)))
+                cv2.imwrite(filename_output, image)
         cap.release()
         time.sleep(2)

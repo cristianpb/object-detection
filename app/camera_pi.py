@@ -80,14 +80,15 @@ def CaptureContinous():
         output = detector.prediction(image)
         df = detector.filter_prediction(output, image)
         if len(df) > 0:
-            day = datetime.now().strftime("%Y%m%d")
-            directory = os.path.join(IMAGE_FOLDER, 'pi', day)
-            if not os.path.exists(directory):
-                os.makedirs(directory)
-            image = detector.draw_boxes(image, df)
-            classes = df['class_name'].unique().tolist()
-            hour = datetime.now().strftime("%H%M%S")
-            filename_output = os.path.join(directory, "{}_{}_.jpg".format(hour, "-".join(classes)))
-            cv2.imwrite(filename_output, image)
+            if df['class_name'].str.contains('person|bird|cat|wine glass|cup|sandwich').any():
+                day = datetime.now().strftime("%Y%m%d")
+                directory = os.path.join(IMAGE_FOLDER, 'pi', day)
+                if not os.path.exists(directory):
+                    os.makedirs(directory)
+                image = detector.draw_boxes(image, df)
+                classes = df['class_name'].unique().tolist()
+                hour = datetime.now().strftime("%H%M%S")
+                filename_output = os.path.join(directory, "{}_{}_.jpg".format(hour, "-".join(classes)))
+                cv2.imwrite(filename_output, image)
         rawCapture.truncate(0)
         time.sleep(20)

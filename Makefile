@@ -8,13 +8,16 @@ include .env
 PYTHONUNBUFFERED=1
 export PYTHONUNBUFFERED
 
+.env:
+	cp .env.sample .env
+
 build:
 	pip3 install -r requirements.txt
 
-dev:
+dev: .env
 	echo "Using $(CAMERA) $(PORT)"
 	DEBUG=1 python3 app/app.py
 
-up:
+up: .env
 	echo "Using $(CAMERA) $(PORT)"
 	DEBUG="" python3 app/app.py

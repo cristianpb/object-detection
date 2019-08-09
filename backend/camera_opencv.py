@@ -1,9 +1,12 @@
 import os
 import cv2
 from celery import Celery
+from dotenv import load_dotenv
 from importlib import import_module
 from datetime import datetime, timedelta
 from backend.base_camera import BaseCamera
+
+load_dotenv()
 Detector = import_module('backend.' + os.environ['DETECTION_MODEL']).Detector
 detector = Detector()
 

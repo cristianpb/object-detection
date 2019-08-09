@@ -2,7 +2,7 @@ import cv2
 import numpy as np  # type: ignore
 import pandas as pd  # type: ignore
 import imutils
-from utils import timeit
+from backend.utils import timeit
 
 THRESHOLD = 0.5
 DELTA_THRESH = 5

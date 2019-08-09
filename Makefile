@@ -19,7 +19,11 @@ dev: .env
 	DEBUG=1 python3 backend/app.py
 
 celery:
-	celery -A backend.camera_opencv worker -B --loglevel=INFO
+	if [ "${CAMERA}" = 'pi' ]; then \
+		celery -A backend.camera_pi worker -B --loglevel=INFO; \
+	else \
+		celery -A backend.camera_opencv worker -B --loglevel=INFO; \
+	fi
 
 up: .env
 	echo "Using $(CAMERA) $(PORT)"

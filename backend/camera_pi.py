@@ -8,7 +8,10 @@ from datetime import datetime, timedelta
 from importlib import import_module
 from picamera.array import PiRGBArray
 from picamera import PiCamera
+from dotenv import load_dotenv
 from backend.base_camera import BaseCamera
+
+load_dotenv()
 Detector = import_module('backend.' + os.environ['DETECTION_MODEL']).Detector
 detector = Detector()
 

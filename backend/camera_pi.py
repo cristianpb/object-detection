@@ -1,23 +1,34 @@
 import os
 import io
-import time
-from datetime import datetime
+import cv2
 import picamera
+import numpy as np
+from celery import Celery
+from datetime import datetime, timedelta
+from importlib import import_module
 from picamera.array import PiRGBArray
 from picamera import PiCamera
-import numpy as np
-import cv2
-from base_camera import BaseCamera
-
-from ssd_detection import Detector
-# from yolo_detection import Detector
-# from motion import Detector
-
+from backend.base_camera import BaseCamera
+Detector = import_module('backend.' + os.environ['DETECTION_MODEL']).Detector
 detector = Detector()
 
 WIDTH = 640
 HEIGHT = 480
 IMAGE_FOLDER = "./imgs"
+
+celery = Celery("app")
+celery.conf.update(
+        broker_url='redis://localhost:6379/0',
+        result_backend='redis://localhost:6379/0',
+        beat_schedule={
+            "photos_SO": {
+                "task": "backend.camera_pi.CaptureContinous",
+                "schedule": timedelta(seconds=5),
+                "args": []
+                }
+            }
+)
+
 
 class CameraPred(BaseCamera):
     @staticmethod
@@ -68,19 +79,28 @@ class Camera(BaseCamera):
                 stream.truncate()
 
 
-def CaptureContinous():
+@celery.task(bind=True)
+def CaptureContinous(self):
     camera = PiCamera()
     camera.rotation = 180
     camera.resolution = (WIDTH, HEIGHT)
     camera.framerate = 10
     rawCapture = PiRGBArray(camera, size=(WIDTH, HEIGHT))
     rawCapture.truncate(0)
-    for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
+    for frame in camera.capture_continuous(
+            rawCapture,
+            format="bgr",
+            use_video_port=True
+            ):
         image = frame.array
+        rawCapture.truncate(0)
         output = detector.prediction(image)
         df = detector.filter_prediction(output, image)
         if len(df) > 0:
-            if df['class_name'].str.contains('person|bird|cat|wine glass|cup|sandwich').any():
+            if (df['class_name']
+                    .str
+                    .contains('person|bird|cat|wine glass|cup|sandwich')
+                    .any()):
                 day = datetime.now().strftime("%Y%m%d")
                 directory = os.path.join(IMAGE_FOLDER, 'pi', day)
                 if not os.path.exists(directory):
@@ -88,7 +108,7 @@ def CaptureContinous():
                 image = detector.draw_boxes(image, df)
                 classes = df['class_name'].unique().tolist()
                 hour = datetime.now().strftime("%H%M%S")
-                filename_output = os.path.join(directory, "{}_{}_.jpg".format(hour, "-".join(classes)))
+                filename_output = os.path.join(
+                        directory, "{}_{}_.jpg".format(hour, "-".join(classes))
+                        )
                 cv2.imwrite(filename_output, image)
-        rawCapture.truncate(0)
-        time.sleep(20)

@@ -3,7 +3,7 @@ import json
 import cv2
 import numpy as np
 import pandas as pd
-from utils import timeit
+from backend.utils import timeit
 
 THRESHOLD = 0.5
 DETECTION_MODEL = 'ssd_mobilenet/'

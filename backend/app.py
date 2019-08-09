@@ -8,7 +8,6 @@ from itertools import islice
 from dotenv import load_dotenv
 from datetime import datetime
 from flask import Flask, Response, send_from_directory, request, abort
-from multiprocessing import Process
 
 WIDTH = 320
 HEIGHT = 240
@@ -16,50 +15,15 @@ IMAGE_FOLDER = 'imgs'
 load_dotenv()
 
 if os.getenv('CAMERA'):
-    Camera = import_module('camera_' + os.environ['CAMERA']).Camera
-    CameraPred = import_module('camera_' + os.environ['CAMERA']).CameraPred
-    CaptureContinous = import_module('camera_' + os.environ['CAMERA']).CaptureContinous
+    Camera = import_module('backend.camera_' + os.environ['CAMERA']).Camera
+    CameraPred = import_module('backend.camera_' + os.environ['CAMERA']).CameraPred
+    CaptureContinous = import_module('backend.camera_' + os.environ['CAMERA']).CaptureContinous
 else:
     print('Default USB camera')
-    from camera_opencv import Camera, CameraPred, CaptureContinous
+    from backend.camera_opencv import Camera, CameraPred, CaptureContinous
 
 app = Flask(__name__)
 
-
-@app.route('/terminate')
-def secret_route():
-    global p
-    print('Terminating {} {}'.format(p.name, p.pid))
-    p.terminate()
-    p.join()
-    print(p, p.is_alive(), p.pid)
-    return json.dumps({
-        'is_alive': p.is_alive(),
-        'pid': p.pid,
-        'name': p.name
-        })
-
-
-@app.route('/begin')
-def begin_route():
-    global p
-    p = Process(target=CaptureContinous)
-    p.start()
-    print('Starting {} {}'.format(p.name, p.pid))
-    return json.dumps({
-        'is_alive': p.is_alive(),
-        'pid': p.pid,
-        'name': p.name
-        })
-
-
-@app.route('/status')
-def status_route():
-    return json.dumps({
-        'is_alive': p.is_alive(),
-        'pid': p.pid,
-        'name': p.name
-        })
 
 @app.route(os.path.join('/', IMAGE_FOLDER, '<path:filename>'))
 def image_preview(filename):
@@ -81,12 +45,14 @@ def image_preview(filename):
             cv2.putText(
                     im, "{}".format(date), (0, int(img_h*0.98)),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-        return Response(cv2.imencode('.jpg', im)[1].tobytes(), mimetype='image/jpeg')
+        return Response(cv2.imencode('.jpg', im)[1].tobytes(),
+                        mimetype='image/jpeg')
 
     except Exception as e:
         print(e)
 
     return send_from_directory('.', filename)
+
 
 @app.route('/api/delete', methods=['POST'])
 def delete_image():
@@ -97,6 +63,7 @@ def delete_image():
     except Exception as e:
         print(e)
         return abort(404)
+
 
 @app.route('/api/images')
 def api_images():
@@ -148,10 +115,6 @@ def gen(camera):
 @app.route('/video_feed')
 def video_feed():
     """Video streaming route. Put this in the src attribute of an img tag."""
-    global p
-    print('Terminating {} {}'.format(p.name, p.pid))
-    p.terminate()
-    p.join()
     return Response(gen(Camera()),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
@@ -164,10 +127,6 @@ def video_pred():
 
 
 if __name__ == '__main__':
-    if os.getenv('CAMERA') == 'pi':
-        p = Process(target=CaptureContinous)
-        p.start()
-        print("Starting recurrent photos", p.pid)
     app.run(
             host='0.0.0.0',
             debug=bool(os.getenv('DEBUG')),

@@ -16,8 +16,11 @@ build:
 
 dev: .env
 	echo "Using $(CAMERA) $(PORT)"
-	DEBUG=1 python3 app/app.py
+	DEBUG=1 python3 backend/app.py
+
+celery:
+	celery -A backend.camera_opencv worker -B --loglevel=INFO
 
 up: .env
 	echo "Using $(CAMERA) $(PORT)"
-	DEBUG="" python3 app/app.py
+	DEBUG="" python3 backend/app.py

@@ -10,3 +10,4 @@ dist
 imgs/outputcv.jpg
 *.egg*
 celerybeat-schedule
+celeryd.pid

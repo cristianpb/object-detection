@@ -26,7 +26,7 @@ celery.conf.update(
         beat_schedule={
             "photos_SO": {
                 "task": "backend.camera_pi.CaptureContinous",
-                "schedule": timedelta(seconds=5),
+                "schedule": timedelta(seconds=int(str(os.environ['BEAT_INTERVAL']))),
                 "args": []
                 }
             }
@@ -84,34 +84,40 @@ class Camera(BaseCamera):
 
 @celery.task(bind=True)
 def CaptureContinous(self):
-    camera = PiCamera()
-    camera.rotation = 180
-    camera.resolution = (WIDTH, HEIGHT)
-    camera.framerate = 10
-    rawCapture = PiRGBArray(camera, size=(WIDTH, HEIGHT))
-    rawCapture.truncate(0)
-    for frame in camera.capture_continuous(
-            rawCapture,
-            format="bgr",
-            use_video_port=True
-            ):
-        image = frame.array
+    with PiCamera() as camera:
+        camera.rotation = 180
+        camera.resolution = (WIDTH, HEIGHT)
+        camera.framerate = 10
+        rawCapture = PiRGBArray(camera, size=(WIDTH, HEIGHT))
         rawCapture.truncate(0)
-        output = detector.prediction(image)
-        df = detector.filter_prediction(output, image)
-        if len(df) > 0:
-            if (df['class_name']
-                    .str
-                    .contains('person|bird|cat|wine glass|cup|sandwich')
-                    .any()):
-                day = datetime.now().strftime("%Y%m%d")
-                directory = os.path.join(IMAGE_FOLDER, 'pi', day)
-                if not os.path.exists(directory):
-                    os.makedirs(directory)
-                image = detector.draw_boxes(image, df)
-                classes = df['class_name'].unique().tolist()
-                hour = datetime.now().strftime("%H%M%S")
-                filename_output = os.path.join(
-                        directory, "{}_{}_.jpg".format(hour, "-".join(classes))
-                        )
-                cv2.imwrite(filename_output, image)
+        for frame in camera.capture_continuous(
+                rawCapture,
+                format="bgr",
+                use_video_port=True
+                ):
+            image = frame.array
+            rawCapture.truncate(0)
+            output = detector.prediction(image)
+            df = detector.filter_prediction(output, image)
+            if len(df) > 0:
+                if (df['class_name']
+                        .str
+                        .contains('person|bird|cat|wine glass|cup|sandwich')
+                        .any()):
+                    day = datetime.now().strftime("%Y%m%d")
+                    directory = os.path.join(IMAGE_FOLDER, 'pi', day)
+                    if not os.path.exists(directory):
+                        os.makedirs(directory)
+                    image = detector.draw_boxes(image, df)
+                    classes = df['class_name'].unique().tolist()
+                    hour = datetime.now().strftime("%H%M%S")
+                    filename_output = os.path.join(
+                            directory,
+                            "{}_{}_.jpg".format(hour, "-".join(classes))
+                            )
+                    cv2.imwrite(filename_output, image)
+            break
+
+
+if __name__ == '__main__':
+    CaptureContinous()

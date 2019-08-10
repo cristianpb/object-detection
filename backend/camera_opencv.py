@@ -17,7 +17,7 @@ celery.conf.update(
         beat_schedule={
             "photos_SO": {
                 "task": "backend.camera_opencv.CaptureContinous",
-                "schedule": timedelta(seconds=5),
+                "schedule": timedelta(seconds=int(str(os.environ['BEAT_INTERVAL']))),
                 "args": []
                 }
             }

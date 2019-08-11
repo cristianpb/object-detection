@@ -4,8 +4,7 @@ import pandas as pd  # type: ignore
 import imutils
 from backend.utils import timeit
 
-THRESHOLD = 0.5
-DELTA_THRESH = 5
+DELTA_THRESH = 10
 MIN_AREA = 5000
 
 
@@ -68,11 +67,13 @@ class Detector():
 
 
 if __name__ == "__main__":
-    image = cv2.imread("./imgs/pi/20190314/063516_person_.jpg")
+    image = cv2.imread("./imgs/image.jpeg")
+    print(image.shape)
 
     detector = Detector()
 
-    image2 = cv2.imread("./imgs/pi/20190314/063538_person_.jpg")
+    image2 = cv2.imread("./imgs/image_box.jpg")
+    print(image2.shape)
     image2 = cv2.cvtColor(image2, cv2.COLOR_BGR2GRAY)
     image2 = cv2.GaussianBlur(image2, (21, 21), 0)
     detector.avg = image2.astype(float)

@@ -17,10 +17,9 @@ load_dotenv()
 if os.getenv('CAMERA'):
     Camera = import_module('backend.camera_' + os.environ['CAMERA']).Camera
     CameraPred = import_module('backend.camera_' + os.environ['CAMERA']).CameraPred
-    CaptureContinous = import_module('backend.camera_' + os.environ['CAMERA']).CaptureContinous
 else:
     print('Default USB camera')
-    from backend.camera_opencv import Camera, CameraPred, CaptureContinous
+    from backend.camera_opencv import Camera, CameraPred
 
 app = Flask(__name__)
 

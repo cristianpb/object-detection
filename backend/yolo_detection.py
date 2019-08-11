@@ -3,7 +3,7 @@ import cv2
 import json
 import numpy as np
 import pandas as pd
-from utils import timeit
+from backend.utils import timeit
 
 DETECTION_MODEL = 'yolo'
 THRESHOLD = 0.5
@@ -35,10 +35,10 @@ class Detector():
     @timeit
     def __init__(self):
         self.model = cv2.dnn.readNetFromDarknet(
-                'models/yolo/yolov3.cfg',
-                'models/yolo/yolov3.weights')
-                #'models/yolo/yolov3-tiny.cfg',
-                #'models/yolo/yolov3-tiny.weights')
+                #'models/yolo/yolov3.cfg',
+                #'models/yolo/yolov3.weights')
+                'models/yolo/yolov3-tiny.cfg',
+                'models/yolo/yolov3-tiny.weights')
         self.colors = np.random.uniform(0, 255, size=(len(CLASS_NAMES), 3))
 
     def get_output_layers(self, net):

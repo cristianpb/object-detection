@@ -72,6 +72,5 @@ if __name__ == "__main__":
     output = detector.prediction(image)
     df = detector.filter_prediction(output, image)
     print(df)
-    #image = detector.draw_boxes(image, df)
-
-    #cv2.imwrite("./imgs/outputcv.jpg", image)
+    image = detector.draw_boxes(image, df)
+    cv2.imwrite("./imgs/outputcv.jpg", image)

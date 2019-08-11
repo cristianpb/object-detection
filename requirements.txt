@@ -11,3 +11,4 @@ python-dotenv==0.10.2
 Werkzeug==0.14.1
 celery==4.3.0
 redis==3.3.6
+imutils==0.5.2

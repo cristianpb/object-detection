@@ -47,7 +47,7 @@ class Detector():
 
 
 if __name__ == "__main__":
-    image = cv2.imread("./imgs/pi/20190316/082839_person-person-person_.jpg")
+    image = cv2.imread("./imgs/image.jpeg")
     image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     detector = Detector()

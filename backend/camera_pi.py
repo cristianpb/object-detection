@@ -85,18 +85,12 @@ class Camera(BaseCamera):
 @celery.task(bind=True)
 def CaptureContinous(self):
     with PiCamera() as camera:
+        camera.resolution = (1280, 960)  # twice height and widht
         camera.rotation = 180
-        camera.resolution = (WIDTH, HEIGHT)
         camera.framerate = 10
-        rawCapture = PiRGBArray(camera, size=(WIDTH, HEIGHT))
-        rawCapture.truncate(0)
-        for frame in camera.capture_continuous(
-                rawCapture,
-                format="bgr",
-                use_video_port=True
-                ):
-            image = frame.array
-            rawCapture.truncate(0)
+        with PiRGBArray(camera, size=(WIDTH, HEIGHT)) as output:
+            camera.capture(output, 'bgr', resize=(WIDTH, HEIGHT))
+            image = output.array
             output = detector.prediction(image)
             df = detector.filter_prediction(output, image)
             if len(df) > 0:
@@ -116,7 +110,6 @@ def CaptureContinous(self):
                             "{}_{}_.jpg".format(hour, "-".join(classes))
                             )
                     cv2.imwrite(filename_output, image)
-            break
 
 
 if __name__ == '__main__':

@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import pandas as pd
-from utils import timeit
+from backend.utils import timeit
 
 class Detector():
     """Class ssd"""

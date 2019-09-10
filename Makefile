@@ -13,6 +13,7 @@ export PYTHONUNBUFFERED
 
 build:
 	pip3 install -r requirements.txt
+	git clone --single-branch --branch builds https://github.com/cristianpb/object-detection-frontend dist
 
 dev: .env
 	echo "Using $(CAMERA) $(PORT)"

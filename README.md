@@ -36,5 +36,5 @@ sudo apt install python3-dotenv python3-pandas python3-pandas python3-picamera p
 ```
 git clone https://github.com/cristianpb/object-detection.git
 cd object-detection/
-sudo apt install vim
+pip install -e .
 ```

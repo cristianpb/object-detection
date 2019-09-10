@@ -29,7 +29,10 @@ jobs:
       - name: Download ssd
         run: |
           curl -o ssd_mobilenet.tar.gz http://download.tensorflow.org/models/object_detection/ssd_mobilenet_v2_coco_2018_03_29.tar.gz
-          tar xvzf ssd_mobilenet_v2_coco_2018_03_29.tar.gz -C models/ssd_mobilenet  --strip-components=1
+          tar xvzf ssd_mobilenet.tar.gz -C models/ssd_mobilenet  --strip-components=1
+      - name: Install backend package
+        run: |
+          pip install -e .
       - name: Test with pytest
         run: |
           pip install pytest

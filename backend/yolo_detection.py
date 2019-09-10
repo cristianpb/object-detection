@@ -11,7 +11,9 @@ SCALE = 0.00392  # 1/255
 NMS_THRESHOLD = 0.4  # Non Maximum Supression threshold
 SWAPRB = True
 
-with open(os.path.join('./models', DETECTION_MODEL, 'labels.json')) as json_data:
+with open(
+        os.path.join('./models', DETECTION_MODEL, 'labels.json')
+        ) as json_data:
     CLASS_NAMES = json.load(json_data)
 
 
@@ -35,15 +37,16 @@ class Detector():
     @timeit
     def __init__(self):
         self.model = cv2.dnn.readNetFromDarknet(
-                #'models/yolo/yolov3.cfg',
-                #'models/yolo/yolov3.weights')
+                # 'models/yolo/yolov3.cfg',
+                # 'models/yolo/yolov3.weights')
                 'models/yolo/yolov3-tiny.cfg',
                 'models/yolo/yolov3-tiny.weights')
         self.colors = np.random.uniform(0, 255, size=(len(CLASS_NAMES), 3))
 
     def get_output_layers(self, net):
         layer_names = net.getLayerNames()
-        output_layers = [layer_names[i[0] - 1] for i in net.getUnconnectedOutLayers()]
+        output_layers = [layer_names[i[0] - 1]
+                         for i in net.getUnconnectedOutLayers()]
         return output_layers
 
     @timeit
@@ -68,15 +71,17 @@ class Detector():
                 x2=lambda x: (x.x1 + x.w).astype(int),
                 y2=lambda x: (x.y1 + x.h).astype(int),
                 class_name=lambda x: (
-                    x['class_id'].astype(int).astype(str).replace(CLASS_NAMES)),
+                    x['class_id']
+                    .astype(int).astype(str).replace(CLASS_NAMES)),
                 # TODO: python 3.5 fix
-                #label=lambda x: (
-                #    x.class_name + ': ' + (
-                #        x['confidence'].astype(str).str.slice(stop=4)
-                #        )
-                #    )
+                # label=lambda x: (
+                #     x.class_name + ': ' + (
+                #         x['confidence'].astype(str).str.slice(stop=4)
+                #         )
+                #     )
                 )
-        df['label'] = df['class_name'] + ': ' + df['confidence'].astype(str).str.slice(stop=4)
+        df['label'] = (df['class_name'] + ': ' +
+                       df['confidence'].astype(str).str.slice(stop=4))
         cols = ['x1', 'y1', 'w', 'h']
         indices = cv2.dnn.NMSBoxes(
                 df[cols].values.tolist(),
@@ -87,10 +92,20 @@ class Detector():
 
     def draw_boxes(self, image, df):
         for idx, box in df.iterrows():
-            print('--> Detected: ({}:{}) - Score: {:.3f}'.format(box['class_id'], box['class_name'], box['confidence']))
+            print('--> Detected: ({}:{}) - Score: {:.3f}'
+                  .format(box['class_id'],
+                          box['class_name'], box['confidence']))
             color = self.colors[int(box['class_id'])]
-            cv2.rectangle(image, (box['x1'], box['y1']), (box['x2'], box['y2']), color, 6)
-            cv2.putText(image, box['label'], (box['x1'], box['y1'] - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+            cv2.rectangle(
+                    image,
+                    (box['x1'], box['y1']),
+                    (box['x2'], box['y2']),
+                    color, 6)
+            cv2.putText(
+                    image,
+                    box['label'],
+                    (box['x1'], box['y1'] - 5),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
         return image
 
 

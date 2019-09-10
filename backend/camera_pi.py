@@ -1,7 +1,6 @@
 import os
 import io
 import cv2
-import picamera
 import numpy as np
 from celery import Celery
 from datetime import datetime, timedelta
@@ -26,7 +25,9 @@ celery.conf.update(
         beat_schedule={
             "photos_SO": {
                 "task": "backend.camera_pi.CaptureContinous",
-                "schedule": timedelta(seconds=int(str(os.environ['BEAT_INTERVAL']))),
+                "schedule": timedelta(
+                    seconds=int(str(os.environ['BEAT_INTERVAL']))
+                    ),
                 "args": []
                 }
             }
@@ -41,15 +42,15 @@ class CameraPred(BaseCamera):
 
             stream = io.BytesIO()
             for _ in camera.capture_continuous(stream, 'jpeg',
-                                                 use_video_port=True):
-                # return current frame
-                #stream.seek(0)
-                #yield stream.read()
+                                               use_video_port=True):
+                # #return current frame
+                # stream.seek(0)
+                # yield stream.read()
 
-                #_stream = stream.getvalue()
-                #data = np.fromstring(_stream, dtype=np.uint8)
-                #img = cv2.imdecode(data, 1)
-                #yield _stream
+                # _stream = stream.getvalue()
+                # data = np.fromstring(_stream, dtype=np.uint8)
+                # img = cv2.imdecode(data, 1)
+                # yield _stream
 
                 _stream = stream.getvalue()
                 data = np.fromstring(_stream, dtype=np.uint8)
@@ -72,7 +73,7 @@ class Camera(BaseCamera):
             camera.rotation = 180
             stream = io.BytesIO()
             for _ in camera.capture_continuous(stream, 'jpeg',
-                                                 use_video_port=True):
+                                               use_video_port=True):
                 # return current frame
                 stream.seek(0)
                 yield stream.read()

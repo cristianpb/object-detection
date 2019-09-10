@@ -25,7 +25,8 @@ class Detector():
 
     @timeit
     def prediction(self, image):
-        self.model.setInput(cv2.dnn.blobFromImage(image, size=(300, 300), swapRB=SWAPRB))
+        self.model.setInput(
+                cv2.dnn.blobFromImage(image, size=(300, 300), swapRB=SWAPRB))
         output = self.model.forward()
         result = output[0, 0, :, :]
         return result
@@ -43,24 +44,38 @@ class Detector():
                 x2=lambda x: (x['x2'] * width).astype(int),
                 y2=lambda x: (x['y2'] * height).astype(int),
                 class_name=lambda x: (
-                    x['class_id'].astype(int).astype(str).replace(CLASS_NAMES)),
-                # TODO: python 3.5 fix
-                #label=lambda x: (
-                #    x.class_name + ': ' + (
-                #        x['confidence'].astype(str).str.slice(stop=4)
-                #        )
-                #    )
+                    x['class_id'].astype(int).astype(str).replace(CLASS_NAMES)
+                    ),
+                # TODO: don't work in python 3.5
+                # label=lambda x: (
+                #     x.class_name + ': ' + (
+                #         x['confidence'].astype(str).str.slice(stop=4)
+                #         )
+                #     )
                 )
-        df['label'] = df['class_name'] + ': ' + df['confidence'].astype(str).str.slice(stop=4)
+        df['label'] = (df['class_name'] + ': ' +
+                       df['confidence'].astype(str).str.slice(stop=4))
         df = df[df['confidence'] > THRESHOLD]
         return df
 
     def draw_boxes(self, image, df):
         for idx, box in df.iterrows():
-            print('--> Detected: ({}:{}) - Score: {:.3f}'.format(box['class_id'], box['class_name'], box['confidence']))
+            print('--> Detected: ({}:{}) - Score: {:.3f}'
+                  .format(box['class_id'],
+                          box['class_name'],
+                          box['confidence'])
+                  )
             color = self.colors[int(box['class_id'])]
-            cv2.rectangle(image, (box['x1'], box['y1']), (box['x2'], box['y2']), color, 6)
-            cv2.putText(image, box['label'], (box['x1'], box['y1'] - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+            cv2.rectangle(
+                    image,
+                    (box['x1'], box['y1']),
+                    (box['x2'], box['y2']),
+                    color, 6)
+            cv2.putText(
+                    image,
+                    box['label'],
+                    (box['x1'], box['y1'] - 5),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
         return image
 
 

@@ -3,14 +3,18 @@ import numpy as np
 import pandas as pd
 from backend.utils import timeit
 
+
 class Detector():
     """Class ssd"""
 
     @timeit
     def __init__(self):
-        #self.model = cv2.CascadeClassifier("models/cascade/fullbody_recognition_model.xml") # an opencv classifier
-        #self.model = cv2.CascadeClassifier("models/cascade/upperbody_recognition_model.xml") # an opencv classifier
-        self.model = cv2.CascadeClassifier("models/cascade/facial_recognition_model.xml") # an opencv classifier
+        # self.model = cv2.CascadeClassifier(
+        #         "models/cascade/fullbody_recognition_model.xml")
+        # self.model = cv2.CascadeClassifier(
+        #         "models/cascade/upperbody_recognition_model.xml")
+        self.model = cv2.CascadeClassifier(
+                "models/cascade/facial_recognition_model.xml")
         self.colors = np.random.uniform(0, 255, size=(100, 3))
 
     @timeit
@@ -41,8 +45,16 @@ class Detector():
     def draw_boxes(self, image, df):
         for idx, box in df.iterrows():
             color = self.colors[int(box['label'])]
-            cv2.rectangle(image, (box['x1'], box['y1']), (box['x2'], box['y2']), color, 6)
-            cv2.putText(image, box['label'], (box['x1'], box['y1'] - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+            cv2.rectangle(
+                    image,
+                    (box['x1'], box['y1']),
+                    (box['x2'], box['y2']),
+                    color, 6)
+            cv2.putText(
+                    image,
+                    box['label'],
+                    (box['x1'], box['y1'] - 5),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
         return image
 
 

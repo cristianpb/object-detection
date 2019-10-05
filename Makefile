@@ -12,10 +12,11 @@ export PYTHONUNBUFFERED
 	cp .env.sample .env
 
 venv:
-	if [ "${CAMERA}" = 'pi' ]; then \
+	@echo "Installing dependencies for $(CAMERA)"
+	@if [ "${CAMERA}" = 'pi' ]; then \
 		sudo apt install python3-dotenv python3-pandas python3-pandas python3-picamera python3-flask python3-celery python3-redis; \
+		sudo pip3 install -r requirements.txt; \
 		mkdir venv; \
-		pip3 install -r requirements.txt; \
 	else \
 		python3 -m venv venv; \
 		venv/bin/pip install -U -r requirements.txt; \
@@ -30,37 +31,39 @@ models/ssd_mobilenet/frozen_inference_graph.pb:
 	tar xvzf ssd_mobilenet.tar.gz -C models/ssd_mobilenet --strip-components=1
 	rm -rf ssd_mobilenet.tar.gz
 
-build: venv models/ssd_mobilenet/frozen_inference_graph
+build: venv models/ssd_mobilenet/frozen_inference_graph.pb
 
-dev: .env dist 
-	echo "Using $(CAMERA) $(PORT)"
-	if [ "${CAMERA}" = 'pi' ]; then \
+dev: .env dist build
+	@echo "Debug mode $(CAMERA) $(PORT)"
+	@if [ "${CAMERA}" = 'pi' ]; then \
 		DEBUG=1 python3 backend/app.py; \
 	else \
 		DEBUG=1 venv/bin/python3 backend/app.py; \
 	fi
 
-up: .env dist
-	echo "Using $(CAMERA) $(PORT)"
-	if [ "${CAMERA}" = 'pi' ]; then \
+up: .env dist build
+	@echo "Up mode $(CAMERA) $(PORT)"
+	@if [ "${CAMERA}" = 'pi' ]; then \
 		DEBUG="" python3 backend/app.py; \
 	else \
 		DEBUG="" venv/bin/python3 backend/app.py; \
 	fi
 
 celery:
-	if [ "${CAMERA}" = 'pi' ]; then \
+	@echo "Launch celery $(CAMERA)"
+	@if [ "${CAMERA}" = 'pi' ]; then \
         python3 -m celery -A backend.camera_pi worker -B --loglevel=INFO; \
 	else \
 		python3 -m celery -A backend.camera_opencv worker -B --loglevel=INFO --detach; \
 	fi
 
 celery_prod:
-	if [ "${CAMERA}" = 'pi' ]; then \
+	@echo "Launch celery as daemon $(CAMERA)"
+	@if [ "${CAMERA}" = 'pi' ]; then \
         python3 -m celery -A backend.camera_pi worker -B --loglevel=ERROR --detach; \
 	else \
 		python3 -m celery -A backend.camera_opencv worker -B --loglevel=ERROR --detach; \
 	fi
 
 clean:
-	rm -rf venv
+	rm -rf venv dist

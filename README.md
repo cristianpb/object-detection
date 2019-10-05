@@ -1,11 +1,5 @@
 # Object detection app [![Build Status](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2Fcristianpb%2Fobject-detection%2Fbadge%3Fref%3Dmaster&style=flat)](https://actions-badge.atrox.dev/cristianpb/object-detection/goto?ref=master) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Download models 
-
-* [SSD mobilenet](https://github.com/opencv/opencv/wiki/TensorFlow-Object-Detection-API#use-existing-config-file-for-your-model)
-
-* [Yolo V3](https://pjreddie.com/darknet/yolo/)
-
 ## Install
 
 ### Raspberry
@@ -25,16 +19,28 @@ sudo dpkg -i OpenCV*.deb
 sudo ldconfig
 ```
 
-* Install dependencies. I prefer to use `.deb` files in Raspberry Pi instead of `pip` because it doesn't have to compile sources. For installing pandas takes more than 1 hour using `pip`.
-
-```
-sudo apt install python3-dotenv python3-pandas python3-pandas python3-picamera python3-flask python3-celery python3-redis
-```
-
-* Install object-detection
+* Install this object-detection package
 
 ```
 git clone https://github.com/cristianpb/object-detection.git
 cd object-detection/
-pip install -e .
+make up
 ```
+
+For the dependencies, I prefer to use `.deb` files in Raspberry Pi instead of `pip` because it doesn't have to compile sources. For installing pandas takes more than 1 hour using `pip`. More details are in Makefile.
+
+### PC
+
+* Install this object-detection package using the Makefile to have all dependencies installed
+
+```
+git clone https://github.com/cristianpb/object-detection.git
+cd object-detection/
+make up
+```
+
+## Used detection models
+
+* [SSD mobilenet](https://github.com/opencv/opencv/wiki/TensorFlow-Object-Detection-API#use-existing-config-file-for-your-model)
+
+* [Yolo V3](https://pjreddie.com/darknet/yolo/)

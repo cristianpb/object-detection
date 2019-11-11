@@ -12,3 +12,4 @@ Werkzeug==0.15.3
 celery==4.3.0
 redis==3.3.6
 imutils==0.5.2
+flower==0.9.3

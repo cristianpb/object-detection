@@ -30,6 +30,10 @@ models/ssd_mobilenet/frozen_inference_graph.pb:
 	tar xvzf ssd_mobilenet.tar.gz -C models/ssd_mobilenet --strip-components=1
 	rm -rf ssd_mobilenet.tar.gz
 
+models/yolo/yolov3-tiny.weights:
+	#curl -o models/yolo/yolov3.weights https://pjreddie.com/media/files/yolov3.weights
+	curl -o models/yolo/yolov3-tiny.weights https://pjreddie.com/media/files/yolov3-tiny.weights
+
 build: venv models/ssd_mobilenet/frozen_inference_graph.pb
 
 dev: .env dist build

@@ -5,11 +5,11 @@ import imutils
 from backend.utils import timeit
 
 DELTA_THRESH = 10
-MIN_AREA = 5000
+MIN_AREA = 4000
 
 
 class Detector():
-    """Class ssd"""
+    """Class motion detector"""
 
     @timeit
     def __init__(self):

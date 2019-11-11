@@ -5,7 +5,7 @@ from backend.utils import timeit
 
 
 class Detector():
-    """Class ssd"""
+    """Class cascade"""
 
     @timeit
     def __init__(self):

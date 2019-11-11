@@ -6,7 +6,7 @@ import pandas as pd
 from backend.utils import timeit
 
 DETECTION_MODEL = 'yolo'
-THRESHOLD = 0.5
+THRESHOLD = 0.3
 SCALE = 0.00392  # 1/255
 NMS_THRESHOLD = 0.4  # Non Maximum Supression threshold
 SWAPRB = True

@@ -14,7 +14,7 @@ export PYTHONUNBUFFERED
 venv:
 	@echo "Installing dependencies for $(CAMERA)"
 	@if [ "${CAMERA}" = 'pi' ]; then \
-		sudo apt install python3-dotenv python3-pandas python3-pandas python3-picamera python3-flask python3-celery python3-redis python-flower; \
+		sudo apt install python3-dotenv python3-pandas python3-pandas python3-picamera python3-flask python3-celery python3-redis; \
 		mkdir venv; \
 	else \
 		python3 -m venv venv; \
@@ -71,9 +71,9 @@ celery_prod:
 flower:
 	@echo "Launch flower for $(CAMERA)"
 	@if [ "${CAMERA}" = 'pi' ]; then \
-		python3 -m flower -A backend.camera_pi --address=0.0.0.0 --port=5555 & \
+		flower -A backend.camera_pi --address=0.0.0.0 --port=5555 --url_prefix=flower & \
 	else \
-		venv/bin/flower -A backend.camera_opencv --address=0.0.0.0 --port=5555 & \
+		venv/bin/flower -A backend.camera_opencv --address=0.0.0.0 --port=5555 --log-file-prefix=flower.log --logging=debug & \
 	fi
 
 clean:

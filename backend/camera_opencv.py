@@ -1,5 +1,6 @@
 import os
 import cv2
+import base64
 from celery import Celery
 from dotenv import load_dotenv
 from importlib import import_module
@@ -28,32 +29,6 @@ celery.conf.update(
 IMAGE_FOLDER = "./imgs"
 
 
-class CameraPred(BaseCamera):
-    video_source = 0
-
-    @staticmethod
-    def set_video_source(source):
-        Camera.video_source = source
-
-    @staticmethod
-    def frames():
-        camera = cv2.VideoCapture(Camera.video_source)
-        if not camera.isOpened():
-            raise RuntimeError('Could not start camera.')
-
-        while True:
-            # read current frame
-            _, img = camera.read()
-
-            # Prediction
-            output = detector.prediction(img)
-            df = detector.filter_prediction(output, img)
-            img = detector.draw_boxes(img, df)
-
-            # encode as a jpeg image and return it
-            yield cv2.imencode('.jpg', img)[1].tobytes()
-
-
 class Camera(BaseCamera):
     video_source = 0
 
@@ -71,8 +46,22 @@ class Camera(BaseCamera):
             # read current frame
             _, img = camera.read()
 
-            # encode as a jpeg image and return it
-            yield cv2.imencode('.jpg', img)[1].tobytes()
+            yield img
+
+    @staticmethod
+    def prediction(img):
+        output = detector.prediction(img)
+        df = detector.filter_prediction(output, img)
+        img = detector.draw_boxes(img, df)
+        return img
+
+    @staticmethod
+    def img_to_base64(img):
+        """encode as a jpeg image and return it"""
+        buffer = cv2.imencode('.jpg', img)[1].tobytes()
+        jpg_as_text = base64.b64encode(buffer)
+        base64_string = jpg_as_text.decode('utf-8')
+        return base64_string
 
 
 @celery.task(bind=True)
@@ -99,3 +88,7 @@ def CaptureContinous(self):
                     directory, "{}_{}_.jpg".format(hour, "-".join(classes))
                     )
             cv2.imwrite(filename_output, image)
+
+
+if __name__ == '__main__':
+    CaptureContinous()

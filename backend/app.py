@@ -16,10 +16,9 @@ load_dotenv()
 
 if os.getenv('CAMERA'):
     Camera = import_module('backend.camera_' + os.environ['CAMERA']).Camera
-    CameraPred = import_module('backend.camera_' + os.environ['CAMERA']).CameraPred
 else:
     print('Default USB camera')
-    from backend.camera_opencv import Camera, CameraPred
+    from backend.camera_opencv import Camera
 
 app = Flask(__name__)
 
@@ -67,7 +66,7 @@ def delete_image():
 @app.route('/api/images')
 def api_images():
     page = int(request.args.get('page', 0))
-    page_size = int(request.args.get('page_size', 12))
+    page_size = int(request.args.get('page_size', 16))
     mydate = request.args.get('date', None)
     if mydate is not None:
         mydate = (
@@ -87,42 +86,25 @@ def api_images():
     return json.dumps(result)
 
 
+@app.route('/api/single_image')
+def single_image():
+    detection = bool(request.args.get('detection', False))
+    frame = Camera().get_frame()
+    if detection:
+        frame = Camera().prediction(frame)
+    return json.dumps(dict(img=Camera().img_to_base64(frame),
+                      width=WIDTH,
+                      height=HEIGHT))
+
+
 @app.route('/')
-@app.route('/preview')
 def status():
-    return send_from_directory('../dist', "index.html")
-
-
-@app.route('/single/<path:path>')
-def index(path):
     return send_from_directory('../dist', "index.html")
 
 
 @app.route('/<path:path>')
 def build(path):
     return send_from_directory('../dist', path)
-
-
-def gen(camera):
-    """Video streaming generator function."""
-    while True:
-        frame = camera.get_frame()
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-
-
-@app.route('/video_feed')
-def video_feed():
-    """Video streaming route. Put this in the src attribute of an img tag."""
-    return Response(gen(Camera()),
-                    mimetype='multipart/x-mixed-replace; boundary=frame')
-
-
-@app.route('/video_pred')
-def video_pred():
-    """Video streaming route. Put this in the src attribute of an img tag."""
-    return Response(gen(CameraPred()),
-                    mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
 if __name__ == '__main__':

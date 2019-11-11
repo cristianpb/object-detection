@@ -1,6 +1,7 @@
 import os
 import io
 import cv2
+import base64
 import numpy as np
 from celery import Celery
 from datetime import datetime, timedelta
@@ -34,38 +35,6 @@ celery.conf.update(
 )
 
 
-class CameraPred(BaseCamera):
-    @staticmethod
-    def frames():
-        with PiCamera() as camera:
-            camera.rotation = 180
-
-            stream = io.BytesIO()
-            for _ in camera.capture_continuous(stream, 'jpeg',
-                                               use_video_port=True):
-                # #return current frame
-                # stream.seek(0)
-                # yield stream.read()
-
-                # _stream = stream.getvalue()
-                # data = np.fromstring(_stream, dtype=np.uint8)
-                # img = cv2.imdecode(data, 1)
-                # yield _stream
-
-                _stream = stream.getvalue()
-                data = np.fromstring(_stream, dtype=np.uint8)
-                img = cv2.imdecode(data, 1)
-                # Prediction
-                output = detector.prediction(img)
-                df = detector.filter_prediction(output, img)
-                img = detector.draw_boxes(img, df)
-                yield cv2.imencode('.jpg', img)[1].tobytes()
-
-                # reset stream for next frame
-                stream.seek(0)
-                stream.truncate()
-
-
 class Camera(BaseCamera):
     @staticmethod
     def frames():
@@ -76,11 +45,29 @@ class Camera(BaseCamera):
                                                use_video_port=True):
                 # return current frame
                 stream.seek(0)
-                yield stream.read()
+                _stream = stream.getvalue()
+                data = np.fromstring(_stream, dtype=np.uint8)
+                img = cv2.imdecode(data, 1)
+                yield img
 
                 # reset stream for next frame
                 stream.seek(0)
                 stream.truncate()
+
+    @staticmethod
+    def prediction(img):
+        output = detector.prediction(img)
+        df = detector.filter_prediction(output, img)
+        img = detector.draw_boxes(img, df)
+        return img
+
+    @staticmethod
+    def img_to_base64(img):
+        """encode as a jpeg image and return it"""
+        buffer = cv2.imencode('.jpg', img)[1].tobytes()
+        jpg_as_text = base64.b64encode(buffer)
+        base64_string = jpg_as_text.decode('utf-8')
+        return base64_string
 
 
 @celery.task(bind=True)

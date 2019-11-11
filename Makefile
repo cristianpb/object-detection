@@ -54,7 +54,7 @@ celery:
 	@if [ "${CAMERA}" = 'pi' ]; then \
         python3 -m celery -A backend.camera_pi worker -B --loglevel=INFO; \
 	else \
-		python3 -m celery -A backend.camera_opencv worker -B --loglevel=INFO --detach; \
+		venv/bin/celery -A backend.camera_opencv worker -B --loglevel=INFO; \
 	fi
 
 celery_prod:
@@ -62,7 +62,7 @@ celery_prod:
 	@if [ "${CAMERA}" = 'pi' ]; then \
         python3 -m celery -A backend.camera_pi worker -B --loglevel=ERROR --detach; \
 	else \
-		python3 -m celery -A backend.camera_opencv worker -B --loglevel=ERROR --detach; \
+		venv/bin/celery -A backend.camera_opencv worker -B --loglevel=ERROR --detach; \
 	fi
 
 clean:

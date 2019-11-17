@@ -1,4 +1,20 @@
-# Object detection app [![Build Status](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2Fcristianpb%2Fobject-detection%2Fbadge%3Fref%3Dmaster&style=flat)](https://actions-badge.atrox.dev/cristianpb/object-detection/goto?ref=master) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Build Status](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2Fcristianpb%2Fobject-detection%2Fbadge%3Fref%3Dmaster&style=flat)](https://actions-badge.atrox.dev/cristianpb/object-detection/goto?ref=master) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+# Object detection app 
+
+This application uses state of the art algorithms for object detection and a
+[frontend application](https://github.com/cristianpb/object-detection-frontend)
+made with Angular. It can run on Raspberry Pi or PC.
+
+![object detection](https://cristianpb.github.io/assets/img/raspberry-video-stream/main.jpg "object detection")
+
+It can use:
+* SSD Mobilenet
+* Yolo
+* Motion detection using OpenCV
+* Cascade classifier
+
+A celery task can be used to collect photos at regular intervals.
 
 ## Install
 

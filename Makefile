@@ -53,7 +53,7 @@ up: .env dist build
 	fi
 
 celery:
-	@echo "Launch celery $(CAMERA)"
+	@echo "Launch Celery $(CAMERA)"
 	@if [ "${CAMERA}" = 'pi' ]; then \
         python3 -m celery -A backend.camera_pi worker -B --loglevel=INFO; \
 	else \
@@ -61,7 +61,7 @@ celery:
 	fi
 
 celery_prod:
-	@echo "Launch celery as daemon $(CAMERA)"
+	@echo "Launch Celery as daemon $(CAMERA)"
 	@if [ "${CAMERA}" = 'pi' ]; then \
         python3 -m celery -A backend.camera_pi worker -B --loglevel=ERROR --detach; \
 	else \
@@ -69,11 +69,19 @@ celery_prod:
 	fi
 
 flower:
-	@echo "Launch flower for $(CAMERA)"
+	@echo "Launch Flower for $(CAMERA)"
 	@if [ "${CAMERA}" = 'pi' ]; then \
-		flower -A backend.camera_pi --address=0.0.0.0 --port=5555 --url_prefix=flower & \
+		flower -A backend.camera_pi --address=0.0.0.0 --port=5555 --log-file-prefix=flower --url_prefix=flower; \
 	else \
-		venv/bin/flower -A backend.camera_opencv --address=0.0.0.0 --port=5555 --log-file-prefix=flower.log --logging=debug & \
+		venv/bin/flower -A backend.camera_opencv --address=0.0.0.0 --port=5555 --log-file-prefix=flower --logging=debug --url_prefix=flower; \
+	fi
+
+flower_prod:
+	@echo "Launch Flower in background for $(CAMERA)"
+	@if [ "${CAMERA}" = 'pi' ]; then \
+		flower -A backend.camera_pi --address=0.0.0.0 --port=5555 --log-file-prefix=flower --url_prefix=flower & \
+	else \
+		venv/bin/flower -A backend.camera_opencv --address=0.0.0.0 --port=5555 --log-file-prefix=flower --logging=debug --url_prefix=flower & \
 	fi
 
 clean:

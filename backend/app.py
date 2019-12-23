@@ -77,32 +77,35 @@ def get_data(item):
     else:
         return dict(path=item)
 
+
 @app.route('/api/images')
 def api_images():
     page = int(request.args.get('page', 0))
     page_size = int(request.args.get('page_size', 16))
     mydate = request.args.get('date', None)
-    mymonth = request.args.get('month', None)
-    myhour = request.args.get('hour', None)
-    mydetection = request.args.get('detected_object', None)
+    myyear = request.args.get('year', "????")
+    mymonth = request.args.get('month', "??")
+    myday = request.args.get('day', "??")
+    myhour = request.args.get('hour', "??")
+    myminutes = request.args.get('minutes', "??")
+    mydetection = request.args.get('detected_object', "*")
     if mydate is not None:
-        mydate = (
-                datetime
-                .strptime(mydate, "%d/%m/%Y")
-                .strftime("%Y%m%d")
-                )
-        myiter = glob.iglob(os.path.join(IMAGE_FOLDER, '**', mydate, '*.jpg'), recursive=True)
-    elif mymonth is not None:
-        mypath = os.path.join(IMAGE_FOLDER, '**', '*{}??'.format(mymonth), '*.jpg')
-        print(mypath)
-        myiter = glob.iglob(mypath, recursive=True)
-    elif myhour is not None:
-        myhour = os.path.join(IMAGE_FOLDER, '**', '??{}*.jpg'.format(myhour), '*.jpg')
-        print(mypath)
-        myiter = glob.iglob(mypath, recursive=True)
-    elif mydetection is not None:
-        mypath = os.path.join(IMAGE_FOLDER, '**', '*{}*.jpg'.format(mydetection), )
-        print(mypath)
+        mydate = (datetime
+                  .strptime(mydate, "%d/%m/%Y")
+                  .strftime("%Y%m%d")
+                  )
+        myiter = glob.iglob(os.path.join(IMAGE_FOLDER, '**', mydate, '*.jpg'),
+                            recursive=True)
+    elif (myyear != "????" or
+          mymonth != "??" or
+          myday != "??" or
+          myhour != "??" or
+          myminutes != "??" or
+          mydetection != "*"):
+        mypath = os.path.join(
+                              IMAGE_FOLDER, '**',
+                              f'{myyear}{mymonth}{myday}',
+                              f'{myhour.zfill(2)}{myminutes}??*{mydetection}*.jpg')
         myiter = glob.iglob(mypath, recursive=True)
     else:
         myiter = glob.iglob(os.path.join(IMAGE_FOLDER, '**', '*.jpg'),
@@ -128,11 +131,14 @@ def single_image():
 def reduce_month(accu, item):
     if 'pi' not in item:
         return accu
+    year = item.split('/')[2][:4]
+    if year not in accu:
+        accu[year] = dict()
     month = item.split('/')[2][4:6]
-    if month in accu:
-        accu[month] +=1
+    if month in accu[year]:
+        accu[year][month] +=1
     else:
-        accu[month] = 1
+        accu[year][month] = 1
     return accu
 
 def reduce_year(accu, item):

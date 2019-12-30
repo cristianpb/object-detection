@@ -6,7 +6,7 @@ include .env
 # this is usefull with most python apps in dev mode because if stdout is
 # buffered logs do not shows in realtime
 PYTHONUNBUFFERED=1
-export PYTHONUNBUFFERED
+export
 
 .env:
 	cp .env.sample .env

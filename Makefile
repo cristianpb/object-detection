@@ -52,6 +52,9 @@ up: .env dist build
 		DEBUG="" venv/bin/python3 backend/app.py; \
 	fi
 
+heroku: .env dist models/ssd_mobilenet/frozen_inference_graph.pb
+	DEBUG="" python3 backend/app.py; \
+
 celery:
 	@echo "Launch Celery $(CAMERA)"
 	@if [ "${CAMERA}" = 'pi' ]; then \

@@ -12,7 +12,7 @@ from flask import Flask, Response, send_from_directory, request, abort
 WIDTH = 320
 HEIGHT = 240
 IMAGE_FOLDER = 'imgs'
-load_dotenv()
+load_dotenv('.env')
 
 if os.getenv('CAMERA'):
     Camera = import_module('backend.camera_' + os.environ['CAMERA']).Camera
@@ -111,6 +111,6 @@ if __name__ == '__main__':
     app.run(
             host='0.0.0.0',
             debug=bool(os.getenv('DEBUG')),
-            threaded=True,
+            threaded=False,
             port=int(str(os.getenv('PORT')))
             )

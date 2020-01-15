@@ -14,7 +14,13 @@ export PYTHONUNBUFFERED
 venv:
 	@echo "Installing dependencies for $(CAMERA)"
 	@if [ "${CAMERA}" = 'pi' ]; then \
-		sudo apt install python3-dotenv python3-pandas python3-pandas python3-picamera python3-flask python3-celery python3-redis; \
+		sudo apt install python3-dotenv python3-pandas python3-picamera python3-flask python3-celery python3-redis; \
+		mkdir venv; \
+	elif [ "${CAMERA}" = 'jetson' ]; then \
+		sudo apt install python3-dotenv python3-pandas python3-flask python3-celery python3-redis python3-pip; \
+		sudo pip3 install Cython; \
+		sudo apt-get install protobuf-compiler libprotobuf-dev protobuf-compiler; \
+		pip3 install pycuda; \
 		mkdir venv; \
 	else \
 		python3 -m venv venv; \
@@ -40,6 +46,8 @@ dev: .env dist build
 	@echo "Debug mode $(CAMERA) $(PORT)"
 	@if [ "${CAMERA}" = 'pi' ]; then \
 		DEBUG=1 python3 backend/app.py; \
+	elif [ "${CAMERA}" = 'jetson' ]; then \
+		DEBUG=1 python3 backend/app.py; \
 	else \
 		DEBUG=1 venv/bin/python3 backend/app.py; \
 	fi
@@ -47,6 +55,8 @@ dev: .env dist build
 up: .env dist build
 	@echo "Up mode $(CAMERA) $(PORT)"
 	@if [ "${CAMERA}" = 'pi' ]; then \
+		DEBUG="" python3 backend/app.py; \
+	elif [ "${CAMERA}" = 'jetson' ]; then \
 		DEBUG="" python3 backend/app.py; \
 	else \
 		DEBUG="" venv/bin/python3 backend/app.py; \

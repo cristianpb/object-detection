@@ -3,7 +3,7 @@ import json
 import cv2
 import numpy as np
 import pandas as pd
-from backend.utils import timeit
+from backend.utils import timeit, draw_boxed_text
 
 THRESHOLD = 0.5
 DETECTION_MODEL = 'ssd_mobilenet/'
@@ -60,22 +60,12 @@ class Detector():
 
     def draw_boxes(self, image, df):
         for idx, box in df.iterrows():
-            print('--> Detected: ({}:{}) - Score: {:.3f}'
-                  .format(box['class_id'],
-                          box['class_name'],
-                          box['confidence'])
-                  )
+            x_min, y_min, x_max, y_max = box['x1'], box['y1'], box['x2'], box['y2']
             color = self.colors[int(box['class_id'])]
-            cv2.rectangle(
-                    image,
-                    (box['x1'], box['y1']),
-                    (box['x2'], box['y2']),
-                    color, 6)
-            cv2.putText(
-                    image,
-                    box['label'],
-                    (box['x1'], box['y1'] - 5),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+            cv2.rectangle(image, (x_min, y_min), (x_max, y_max), color, 2)
+            txt_loc = (max(x_min+2, 0), max(y_min+2, 0))
+            txt = box['label']
+            image = draw_boxed_text(image, txt, txt_loc, color)
         return image
 
 

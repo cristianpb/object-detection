@@ -3,6 +3,7 @@ import os
 import glob
 import cv2
 import json
+from functools import reduce
 from importlib import import_module
 from itertools import islice
 from dotenv import load_dotenv
@@ -13,6 +14,10 @@ WIDTH = 320
 HEIGHT = 240
 IMAGE_FOLDER = 'imgs'
 load_dotenv('.env')
+if os.getenv('PORT'):
+    PORT = int(str(os.getenv('PORT')))
+else:
+    PORT=5000
 
 if os.getenv('CAMERA'):
     Camera = import_module('backend.camera_' + os.environ['CAMERA']).Camera
@@ -62,26 +67,57 @@ def delete_image():
         print(e)
         return abort(404)
 
+def get_data(item):
+    if 'pi' in item:
+        year = item.split('/')[2][:4]
+        month = item.split('/')[2][4:6]
+        day = item.split('/')[2][6:8]
+        hour = item.split('/')[3][:2]
+        minutes = item.split('/')[3][2:4]
+        return dict(
+                path=item, year=year, month=month, day=day,
+                hour=hour, minutes=minutes
+                )
+    else:
+        return dict(path=item)
+
 
 @app.route('/api/images')
 def api_images():
     page = int(request.args.get('page', 0))
     page_size = int(request.args.get('page_size', 16))
     mydate = request.args.get('date', None)
+    myyear = request.args.get('year', "????")
+    mymonth = request.args.get('month', "??")
+    myday = request.args.get('day', "??")
+    myhour = request.args.get('hour', "??")
+    myminutes = request.args.get('minutes', "??")
+    mydetection = request.args.get('detected_object', "*")
     if mydate is not None:
-        mydate = (
-                datetime
-                .strptime(mydate, "%d/%m/%Y")
-                .strftime("%Y%m%d")
-                )
+        mydate = (datetime
+                  .strptime(mydate, "%d/%m/%Y")
+                  .strftime("%Y%m%d")
+                  )
         myiter = glob.iglob(os.path.join(IMAGE_FOLDER, '**', mydate, '*.jpg'),
                             recursive=True)
+    elif (myyear != "????" or
+          mymonth != "??" or
+          myday != "??" or
+          myhour != "??" or
+          myminutes != "??" or
+          mydetection != "*"):
+        mypath = os.path.join(
+                              IMAGE_FOLDER, '**',
+                              f'{myyear}{mymonth}{myday}',
+                              f'{myhour.zfill(2)}{myminutes}??*{mydetection}*.jpg')
+        myiter = glob.iglob(mypath, recursive=True)
     else:
         myiter = glob.iglob(os.path.join(IMAGE_FOLDER, '**', '*.jpg'),
                             recursive=True)
+
     start = page * page_size
     end = (page + 1) * page_size
-    result = [i for i in islice(myiter, start, end)]
+    result = [get_data(i) for i in islice(myiter, start, end)]
     print('->> Start', start, 'end', end, 'len', len(result))
     return json.dumps(result)
 
@@ -95,6 +131,74 @@ def single_image():
     return json.dumps(dict(img=Camera().img_to_base64(frame),
                       width=WIDTH,
                       height=HEIGHT))
+
+def reduce_month(accu, item):
+    if 'pi' not in item:
+        return accu
+    year = item.split('/')[2][:4]
+    if year not in accu:
+        accu[year] = dict()
+    month = item.split('/')[2][4:6]
+    if month in accu[year]:
+        accu[year][month] +=1
+    else:
+        accu[year][month] = 1
+    return accu
+
+def reduce_year(accu, item):
+    if 'pi' not in item:
+        return accu
+    year = item.split('/')[2][:4]
+    if year in accu:
+        accu[year] +=1
+    else:
+        accu[year] = 1
+    return accu
+
+
+def reduce_hour(accu, item):
+    if 'pi' not in item:
+        return accu
+    condition = item.split('/')[3][:2]
+    if condition in accu:
+        accu[condition] +=1
+    else:
+        accu[condition] = 1
+    return accu
+
+
+def reduce_object(accu, item):
+    if 'pi' not in item:
+        return accu
+    condition = item.split('/')[3].split('_')[1].split('-')
+    for val in condition:
+        if val in accu:
+            accu[val] +=1
+        else:
+            accu[val] = 1
+    return accu
+
+myconditions = dict(
+        month=reduce_month,
+        year=reduce_year,
+        hour=reduce_hour,
+        detected_object=reduce_object,
+        )
+
+
+@app.route('/api/list_files')
+def list_folder():
+    condition = request.args.get('condition', 'year')
+    myiter = glob.iglob(os.path.join(IMAGE_FOLDER, '**', '*.jpg'),
+                        recursive=True)
+    newdict = reduce(lambda a, b: myconditions[condition](a,b), myiter, dict())
+    # year = item.split('/')[2][:4]
+    # month = item.split('/')[2][4:6]
+    # day = item.split('/')[2][6:8]
+    # hour = item.split('/')[3][:2]
+    # minutes = item.split('/')[3][2:4]
+    # return json.dumps({k: v for k, v in sorted(newdict.items(), key=lambda item: item[1], reverse=True)})
+    return json.dumps(newdict)
 
 
 @app.route('/')

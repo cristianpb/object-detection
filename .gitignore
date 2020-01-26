@@ -14,3 +14,4 @@ celeryd.pid
 venv
 models/ssd_mobilenet/*
 ssd_mobilenet.tar.gz
+*.log

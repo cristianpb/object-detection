@@ -1,6 +1,7 @@
 import os
 import cv2
 import base64
+import numpy as np
 from celery import Celery
 from dotenv import load_dotenv
 from importlib import import_module
@@ -59,6 +60,7 @@ def gstreamer_pipeline(
 
 class Camera(BaseCamera):
     video_source = 0
+    ct = CentroidTracker()
 
     @staticmethod
     def set_video_source(source):
@@ -80,9 +82,19 @@ class Camera(BaseCamera):
     def prediction(img, conf_class=[]):
         boxes, confs, clss = detector.prediction(img, conf_class=conf_class)
         img = detector.draw_boxes(img, boxes, confs, clss)
-        #output = detector.prediction(img)
-        #df = detector.filter_prediction(output, img)
-        #img = detector.draw_boxes(img, df)
+        return img
+
+    @staticmethod
+    def object_track(img, conf_class=[]):
+        boxes, confs, clss = detector.prediction(img, conf_class=conf_class)
+        img = detector.draw_boxes(img, boxes, confs, clss)
+        objects = Camera.ct.update(boxes)
+        if len(boxes) > 0 and 1 in clss:
+            for (objectID, centroid) in objects.items():
+                text = "ID {}".format(objectID)
+                cv2.putText(img, text, (centroid[0] - 10, centroid[1] - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                cv2.circle(img, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
         return img
 
     @staticmethod
@@ -102,29 +114,10 @@ def CaptureContinous(self):
     cap.release()
     boxes, confs, clss = detector.prediction(image)
     image = detector.draw_boxes(image, boxes, confs, clss)
-    #output = detector.prediction(image)
-    #df = detector.filter_prediction(output, image)
-    #if len(df) > 0:
-    #    if (df['class_name']
-    #            .str
-    #            .contains('person|bird|cat|wine glass|cup|sandwich')
-    #            .any()):
-    #        day = datetime.now().strftime("%Y%m%d")
-    #        directory = os.path.join(IMAGE_FOLDER, 'webcam', day)
-    #        if not os.path.exists(directory):
-    #            os.makedirs(directory)
-    #        image = detector.draw_boxes(image, df)
-    #        classes = df['class_name'].unique().tolist()
-    #        hour = datetime.now().strftime("%H%M%S")
-    #        filename_output = os.path.join(
-    #                directory, "{}_{}_.jpg".format(hour, "-".join(classes))
-    #                )
-    #        cv2.imwrite(filename_output, image)
 
 
 def ObjectTracking():
     ct = CentroidTracker()
-    (H, W) = (None, None)
     camera = cv2.VideoCapture(gstreamer_pipeline(flip_method=0), cv2.CAP_GSTREAMER)
     if not camera.isOpened():
         raise RuntimeError('Could not start camera.')
@@ -134,12 +127,13 @@ def ObjectTracking():
             _, img = camera.read()
             boxes, confs, clss = detector.prediction(img, conf_class=[1])
             img = detector.draw_boxes(img, boxes, confs, clss)
+            objects = ct.update(boxes)
             if len(boxes) > 0 and 1 in clss:
-                #print("detected")
+                print("detected {} {} {}".format(confs, objects, boxes))
                 #print("conf", confs)
                 #print('clss', clss)
+                #print('boxes', boxes)
 
-                objects = ct.update(boxes)
                 # loop over the tracked objects
                 for (objectID, centroid) in objects.items():
                     text = "ID {}".format(objectID)
@@ -157,12 +151,17 @@ def ObjectTracking():
                         )
                 cv2.imwrite(filename_output, img)
 
-    except KeyboardInterrupt:
+    #except KeyboardInterrupt:
+    #    print('interrupted!')
+    #    camera.release()
+    #    print(type(objects))
+    #    print(objects)
+
+    except:
         print('interrupted!')
         camera.release()
         print(type(objects))
         print(objects)
-        cv2.imwrite("last.jpg", img)
 
 
 if __name__ == '__main__':

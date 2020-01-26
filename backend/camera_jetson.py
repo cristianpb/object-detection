@@ -5,6 +5,7 @@ from celery import Celery
 from dotenv import load_dotenv
 from importlib import import_module
 from datetime import datetime, timedelta
+from centroidtracker import CentroidTracker
 from backend.base_camera import BaseCamera
 
 load_dotenv('.env')
@@ -76,8 +77,8 @@ class Camera(BaseCamera):
             yield img
 
     @staticmethod
-    def prediction(img):
-        boxes, confs, clss = detector.prediction(img)
+    def prediction(img, conf_class=[]):
+        boxes, confs, clss = detector.prediction(img, conf_class=conf_class)
         img = detector.draw_boxes(img, boxes, confs, clss)
         #output = detector.prediction(img)
         #df = detector.filter_prediction(output, img)
@@ -121,5 +122,49 @@ def CaptureContinous(self):
     #        cv2.imwrite(filename_output, image)
 
 
+def ObjectTracking():
+    ct = CentroidTracker()
+    (H, W) = (None, None)
+    camera = cv2.VideoCapture(gstreamer_pipeline(flip_method=0), cv2.CAP_GSTREAMER)
+    if not camera.isOpened():
+        raise RuntimeError('Could not start camera.')
+
+    try:
+        while True:
+            _, img = camera.read()
+            boxes, confs, clss = detector.prediction(img, conf_class=[1])
+            img = detector.draw_boxes(img, boxes, confs, clss)
+            if len(boxes) > 0 and 1 in clss:
+                #print("detected")
+                #print("conf", confs)
+                #print('clss', clss)
+
+                objects = ct.update(boxes)
+                # loop over the tracked objects
+                for (objectID, centroid) in objects.items():
+                    text = "ID {}".format(objectID)
+                    cv2.putText(img, text, (centroid[0] - 10, centroid[1] - 10),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                    cv2.circle(img, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
+
+                day = datetime.now().strftime("%Y%m%d")
+                directory = os.path.join(IMAGE_FOLDER, 'pi', day)
+                if not os.path.exists(directory):
+                    os.makedirs(directory)
+                hour = datetime.now().strftime("%H%M%S")
+                filename_output = os.path.join(
+                        directory, "{}_{}_.jpg".format(hour, "person")
+                        )
+                cv2.imwrite(filename_output, img)
+
+    except KeyboardInterrupt:
+        print('interrupted!')
+        camera.release()
+        print(type(objects))
+        print(objects)
+        cv2.imwrite("last.jpg", img)
+
+
 if __name__ == '__main__':
-    CaptureContinous()
+    #CaptureContinous()
+    ObjectTracking()

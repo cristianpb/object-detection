@@ -11,7 +11,7 @@ from utils_ssd.display import open_window, set_display, show_fps
 #with open(os.path.join('models', DETECTION_MODEL, 'labels.json')) as json_data:
 #    CLASS_NAMES = json.load(json_data)
 
-conf_th = 0.3
+conf_th = 0.8
 INPUT_HW = (300, 300)
 cls_dict = get_cls_dict("coco")
 vis = BBoxVisualization(cls_dict)
@@ -27,8 +27,8 @@ class Detector():
         self.model = TrtSSD("ssd_mobilenet_v2_coco", INPUT_HW)
 
     @timeit
-    def prediction(self, image):
-        boxes, confs, clss = self.model.detect(image, conf_th)
+    def prediction(self, image, conf_class=[]):
+        boxes, confs, clss = self.model.detect(image, conf_th, conf_class=conf_class)
         #self.model.setInput(
         #        cv2.dnn.blobFromImage(image, size=(300, 300), swapRB=SWAPRB))
         #output = self.model.forward()

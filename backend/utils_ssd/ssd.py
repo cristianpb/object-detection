@@ -21,7 +21,7 @@ def _preprocess_trt(img, shape=(300, 300)):
     return img
 
 
-def _postprocess_trt(img, output, conf_th, output_layout):
+def _postprocess_trt(img, output, conf_th, output_layout, conf_class):
     """Postprocess TRT SSD output."""
     img_h, img_w, _ = img.shape
     boxes, confs, clss = [], [], []
@@ -35,6 +35,8 @@ def _postprocess_trt(img, output, conf_th, output_layout):
         x2 = int(output[prefix+5] * img_w)
         y2 = int(output[prefix+6] * img_h)
         cls = int(output[prefix+1])
+        if len(conf_class) > 0 and cls not in conf_class:
+            continue
         boxes.append((x1, y1, x2, y2))
         confs.append(conf)
         clss.append(cls)
@@ -91,7 +93,7 @@ class TrtSSD(object):
         del self.cuda_outputs
         del self.cuda_inputs
 
-    def detect(self, img, conf_th=0.3):
+    def detect(self, img, conf_th=0.3, conf_class=[]):
         """Detect objects in the input image."""
         img_resized = _preprocess_trt(img, self.input_shape)
         np.copyto(self.host_inputs[0], img_resized.ravel())
@@ -109,7 +111,7 @@ class TrtSSD(object):
         self.stream.synchronize()
 
         output = self.host_outputs[0]
-        return _postprocess_trt(img, output, conf_th, self.output_layout)
+        return _postprocess_trt(img, output, conf_th, self.output_layout, conf_class)
 
 
 def _preprocess_tf(img, shape=(300, 300)):

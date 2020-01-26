@@ -125,9 +125,12 @@ def api_images():
 @app.route('/api/single_image')
 def single_image():
     detection = bool(request.args.get('detection', False))
+    tracking = bool(request.args.get('tracking', False))
     frame = Camera().get_frame()
     if detection:
         frame = Camera().prediction(frame)
+    elif tracking:
+        frame = Camera().object_track(frame)
     return json.dumps(dict(img=Camera().img_to_base64(frame),
                       width=WIDTH,
                       height=HEIGHT))

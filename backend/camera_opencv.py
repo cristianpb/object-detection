@@ -5,6 +5,7 @@ from celery import Celery
 from dotenv import load_dotenv
 from importlib import import_module
 from datetime import datetime, timedelta
+from centroidtracker import CentroidTracker
 from backend.base_camera import BaseCamera
 
 load_dotenv()
@@ -31,6 +32,7 @@ IMAGE_FOLDER = "./imgs"
 
 class Camera(BaseCamera):
     video_source = 0
+    ct = CentroidTracker()
 
     @staticmethod
     def set_video_source(source):
@@ -53,6 +55,22 @@ class Camera(BaseCamera):
         output = detector.prediction(img)
         df = detector.filter_prediction(output, img)
         img = detector.draw_boxes(img, df)
+        return img
+
+    @staticmethod
+    def object_track(img):
+        output = detector.prediction(img)
+        df = detector.filter_prediction(output, img)
+        img = detector.draw_boxes(img, df)
+        boxes = df[['x1', 'y1', 'x2', 'y2']].values
+        print(df)
+        objects = Camera.ct.update(boxes)
+        if len(boxes) > 0 and (df['class_name'].str.contains('person').any()):
+            for (objectID, centroid) in objects.items():
+                text = "ID {}".format(objectID)
+                cv2.putText(img, text, (centroid[0] - 10, centroid[1] - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                cv2.circle(img, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
         return img
 
     @staticmethod

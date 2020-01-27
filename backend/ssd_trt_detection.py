@@ -1,20 +1,21 @@
+import os
 import cv2
+import json
 import numpy as np
 import pycuda.autoinit  # This is needed for initializing CUDA driver
 from backend.utils import timeit
 
-from utils_ssd.ssd_classes import get_cls_dict
 from utils_ssd.ssd import TrtSSD
 from utils_ssd.visualization import BBoxVisualization
-from utils_ssd.display import open_window, set_display, show_fps
 
-#with open(os.path.join('models', DETECTION_MODEL, 'labels.json')) as json_data:
-#    CLASS_NAMES = json.load(json_data)
-
+DETECTION_MODEL = 'yolo'
 conf_th = 0.8
 INPUT_HW = (300, 300)
-cls_dict = get_cls_dict("coco")
-vis = BBoxVisualization(cls_dict)
+
+with open(os.path.join('models', DETECTION_MODEL, 'labels.json')) as json_data:
+    CLASS_NAMES = json.load(json_data)
+vis = BBoxVisualization(CLASS_NAMES)
+
 
 class Detector():
     """Class ssd"""
@@ -37,7 +38,7 @@ class Detector():
 
     @timeit
     def filter_prediction(self, clss):
-        print([get_cls_dict("coco")[c] for c in clss])
+        print([CLASS_NAMES[c] for c in clss])
         #height, width = image.shape[:-1]
         #df = pd.DataFrame(
         #        output,
@@ -93,29 +94,3 @@ if __name__ == "__main__":
     detector.filter_prediction(clss)
     image = detector.draw_boxes(image, boxes, confs, clss)
     cv2.imwrite("./imgs/outputcv.jpg", image)
-
-    ##model = "ssd_mobilenet_v2_coco"
-    ##filename = "imgs/image.jpeg"
-    ##conf_th = 0.3
-    ##INPUT_HW = (300, 300)
-    ##cls_dict = get_cls_dict("coco")
-    ##vis = BBoxVisualization(cls_dict)
-    ##img = cv2.imread(filename)
-    ##img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    ##trt_ssd = TrtSSD(model, INPUT_HW)
-    ### Kick start the model.
-    ##for _ in range(20):
-    ##    boxes, confs, clss = trt_ssd.detect(img, conf_th)
-    ##print([get_cls_dict("coco")[c] for c in clss])
-    ##img = vis.draw_bboxes(img, boxes, confs, clss)
-    ##cv2.imwrite("result.jpg", img[..., ::-1])
-
-    #image = cv2.imread("./imgs/image.jpeg")
-    #print(CLASS_NAMES)
-
-    #detector = Detector()
-    #output = detector.prediction(image)
-    #df = detector.filter_prediction(output, image)
-    #print(df)
-    #image = detector.draw_boxes(image, df)
-    #cv2.imwrite("./imgs/outputcv.jpg", image)

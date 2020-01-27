@@ -1,5 +1,4 @@
 from scipy.spatial import distance as dist
-from collections import OrderedDict
 import numpy as np
 
 class CentroidTracker():
@@ -9,8 +8,8 @@ class CentroidTracker():
         # ID to its centroid and number of consecutive frames it has
         # been marked as "disappeared", respectively
         self.nextObjectID = 0
-        self.objects = OrderedDict()
-        self.disappeared = OrderedDict()
+        self.objects = dict()
+        self.disappeared = dict()
 
         # store the number of maximum consecutive frames a given
         # object is allowed to be marked as "disappeared" until we
@@ -27,8 +26,8 @@ class CentroidTracker():
     def deregister(self, objectID):
         # to deregister an object ID we delete the object ID from
         # both of our respective dictionaries
-        del self.objects[objectID]
-        del self.disappeared[objectID]
+        self.objects.pop(objectID)
+        self.disappeared.pop(objectID)
 
     def update(self, rects):
         # check to see if the list of input bounding box rectangles
@@ -36,7 +35,7 @@ class CentroidTracker():
         if len(rects) == 0:
             # loop over any existing tracked objects and mark them
             # as disappeared
-            for objectID in self.disappeared.keys():
+            for objectID in list(self.disappeared.keys()):
                 self.disappeared[objectID] += 1
 
                 # if we have reached a maximum number of consecutive

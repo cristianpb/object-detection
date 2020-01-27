@@ -150,15 +150,14 @@ def ObjectTracking():
                         directory, "{}_{}_.jpg".format(hour, "person")
                         )
                 cv2.imwrite(filename_output, img)
-
-    #except KeyboardInterrupt:
-    #    print('interrupted!')
-    #    camera.release()
-    #    print(type(objects))
-    #    print(objects)
-
-    except:
+    except KeyboardInterrupt:
         print('interrupted!')
+        camera.release()
+        print(type(objects))
+        print(objects)
+    except Exception as e:
+        print('interrupted! by:')
+        print(e)
         camera.release()
         print(type(objects))
         print(objects)

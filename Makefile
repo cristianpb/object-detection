@@ -31,6 +31,9 @@ venv:
 dist:
 	git clone --single-branch --branch builds https://github.com/cristianpb/object-detection-frontend dist
 
+push:
+	rsync -avz --exclude 'backend.egg-info' --exclude 'dist' --exclude '.env' --exclude 'git' --exclude 'imgs' --exclude 'models' --exclude '.mypy_cache' --exclude '.pytest_cache' --exclude 'venv' * jetson:~/object-detection/
+
 models/ssd_mobilenet/frozen_inference_graph.pb:
 	curl -o ssd_mobilenet.tar.gz http://download.tensorflow.org/models/object_detection/ssd_mobilenet_v2_coco_2018_03_29.tar.gz
 	tar xvzf ssd_mobilenet.tar.gz -C models/ssd_mobilenet --strip-components=1

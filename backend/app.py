@@ -21,6 +21,8 @@ else:
 
 if os.getenv('CAMERA'):
     Camera = import_module('backend.camera_' + os.environ['CAMERA']).Camera
+    ObjectTracking = import_module('backend.camera_' + os.environ['CAMERA']).ObjectTracking
+    celery = import_module('backend.camera_' + os.environ['CAMERA']).celery
 else:
     print('Default USB camera')
     from backend.camera_opencv import Camera
@@ -203,6 +205,48 @@ def list_folder():
     # return json.dumps({k: v for k, v in sorted(newdict.items(), key=lambda item: item[1], reverse=True)})
     return json.dumps(newdict)
 
+
+@app.route('/status/<task_id>')
+def taskstatus(task_id):
+    task = ObjectTracking.AsyncResult(task_id)
+    if task.state == 'PENDING':
+        response = {
+            'state': task.state,
+            'current': 0,
+            'total': 1,
+            'status': 'Pending...'
+        }
+    elif task.state != 'FAILURE':
+        response = {
+            'state': task.state,
+            'current': task.info.get('current', 0),
+            'total': task.info.get('total', 1),
+            'status': task.info.get('status', ''),
+            'partial_result': task.info.get('partial_result', list())
+        }
+        if 'result' in task.info:
+            response['result'] = task.info['result']
+    else:
+        # something went wrong in the background job
+        response = {
+            'state': task.state,
+            'current': 1,
+            'total': 1,
+            'status': str(task.info),  # this is the exception raised
+        }
+    return json.dumps(response)
+
+
+@app.route('/launch')
+def launch_object_tracking():
+    task = ObjectTracking.delay()
+    #return json.dumps({"task_id": task})
+    return json.dumps({"task_id": task.id})
+
+@app.route('/killtask/<task_id>')
+def killtask(task_id):
+    response = celery.control.revoke(task_id, terminate=True)
+    return json.dumps(response)
 
 @app.route('/')
 def status():

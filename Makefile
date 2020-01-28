@@ -72,6 +72,8 @@ celery:
 	@echo "Launch Celery $(CAMERA)"
 	@if [ "${CAMERA}" = 'pi' ]; then \
         python3 -m celery -A backend.camera_pi worker -B --loglevel=INFO; \
+	elif [ "${CAMERA}" = 'jetson' ]; then \
+        python3 -m celery -A backend.camera_jetson worker -P solo -c 1 --loglevel=INFO; \
 	else \
 		venv/bin/celery -A backend.camera_opencv worker -B --loglevel=INFO; \
 	fi

@@ -4,9 +4,8 @@ import json
 import numpy as np
 import pycuda.autoinit  # This is needed for initializing CUDA driver
 from backend.utils import timeit
-
-from utils_ssd.ssd import TrtSSD
-from utils_ssd.visualization import BBoxVisualization
+from backend.utils_ssd.ssd import TrtSSD
+from backend.utils_ssd.visualization import BBoxVisualization
 
 DETECTION_MODEL = 'yolo'
 conf_th = 0.8

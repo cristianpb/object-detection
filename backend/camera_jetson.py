@@ -6,7 +6,7 @@ from celery import Celery
 from dotenv import load_dotenv
 from importlib import import_module
 from datetime import datetime, timedelta
-from centroidtracker import CentroidTracker
+from backend.centroidtracker import CentroidTracker
 from backend.base_camera import BaseCamera
 
 load_dotenv('.env')
@@ -17,15 +17,6 @@ celery = Celery("app")
 celery.conf.update(
         broker_url='redis://localhost:6379/0',
         result_backend='redis://localhost:6379/0',
-        beat_schedule={
-            "photos_SO": {
-                "task": "backend.camera_opencv.CaptureContinous",
-                "schedule": timedelta(
-                    seconds=int(str(os.environ['BEAT_INTERVAL']))
-                    ),
-                "args": []
-                }
-            }
 )
 
 IMAGE_FOLDER = "./imgs"
@@ -108,15 +99,11 @@ class Camera(BaseCamera):
 
 @celery.task(bind=True)
 def CaptureContinous(self):
-    cap = cv2.VideoCapture(0)
-    # Capture frame-by-frame
-    ret, image = cap.read()
-    cap.release()
-    boxes, confs, clss = detector.prediction(image)
-    image = detector.draw_boxes(image, boxes, confs, clss)
+    pass
 
 
-def ObjectTracking():
+@celery.task(bind=True)
+def ObjectTracking(self):
     ct = CentroidTracker()
     camera = cv2.VideoCapture(gstreamer_pipeline(flip_method=0), cv2.CAP_GSTREAMER)
     if not camera.isOpened():
@@ -130,9 +117,6 @@ def ObjectTracking():
             objects = ct.update(boxes)
             if len(boxes) > 0 and 1 in clss:
                 print("detected {} {} {}".format(confs, objects, boxes))
-                #print("conf", confs)
-                #print('clss', clss)
-                #print('boxes', boxes)
 
                 # loop over the tracked objects
                 for (objectID, centroid) in objects.items():

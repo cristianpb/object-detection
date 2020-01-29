@@ -70,14 +70,14 @@ class Camera(BaseCamera):
             yield img
 
     @staticmethod
-    def prediction(img, conf_class=[]):
-        boxes, confs, clss = detector.prediction(img, conf_class=conf_class)
+    def prediction(img, conf_th=0.3, conf_class=[]):
+        boxes, confs, clss = detector.prediction(img, conf_th=conf_th, conf_class=conf_class)
         img = detector.draw_boxes(img, boxes, confs, clss)
         return img
 
     @staticmethod
-    def object_track(img, conf_class=[]):
-        boxes, confs, clss = detector.prediction(img, conf_class=conf_class)
+    def object_track(img, conf_th=0.3, conf_class=[]):
+        boxes, confs, clss = detector.prediction(img, conf_th=conf_th, conf_class=conf_class)
         img = detector.draw_boxes(img, boxes, confs, clss)
         objects = Camera.ct.update(boxes)
         if len(boxes) > 0 and 1 in clss:
@@ -112,7 +112,7 @@ def ObjectTracking(self):
     try:
         while True:
             _, img = camera.read()
-            boxes, confs, clss = detector.prediction(img, conf_class=[1])
+            boxes, confs, clss = detector.prediction(img, conf_th=0.8, conf_class=[1])
             img = detector.draw_boxes(img, boxes, confs, clss)
             objects = ct.update(boxes)
             if len(boxes) > 0 and 1 in clss:
@@ -129,9 +129,11 @@ def ObjectTracking(self):
                 directory = os.path.join(IMAGE_FOLDER, 'pi', day)
                 if not os.path.exists(directory):
                     os.makedirs(directory)
+                ids = "-".join(list([str(i) for i in objects.keys()]))
+                print(ids)
                 hour = datetime.now().strftime("%H%M%S")
                 filename_output = os.path.join(
-                        directory, "{}_{}_.jpg".format(hour, "person")
+                        directory, "{}_{}_.jpg".format(hour, ids)
                         )
                 cv2.imwrite(filename_output, img)
     except KeyboardInterrupt:

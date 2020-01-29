@@ -25,7 +25,7 @@ class CentroidTracker():
         self.nextObjectID += 1
         day = datetime.now().strftime("%Y%m%d")
         hour = datetime.now().strftime("%H%M%S")
-        myCsvRow = "{},{},{},{}\n".format(day, hour, list(self.objects.keys()),[x.tolist() for x in list(self.objects.values())])
+        myCsvRow = "{},{},\"{}\",\"{}\"\n".format(day, hour, list(self.objects.keys()),[x.tolist() for x in list(self.objects.values())])
         with open('imgs/tracking.csv','a') as fd:
             fd.write(myCsvRow)
 

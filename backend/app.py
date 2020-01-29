@@ -3,6 +3,7 @@ import os
 import glob
 import cv2
 import json
+import pandas as pd
 from functools import reduce
 from importlib import import_module
 from itertools import islice
@@ -247,6 +248,13 @@ def launch_object_tracking():
 def killtask(task_id):
     response = celery.control.revoke(task_id, terminate=True)
     return json.dumps(response)
+
+@app.route('/tracking/read')
+def read_tracking():
+    df =pd.read_csv('{}/tracking.csv'.format(IMAGE_FOLDER), header=None, names=['date', 'hour', 'idx', 'coord'])
+    print(df.head())
+    print(df.to_dict(orient='records'))
+    return json.dumps(df.to_dict(orient='records'))
 
 @app.route('/')
 def status():

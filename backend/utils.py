@@ -71,3 +71,61 @@ def draw_boxed_text(img, text, topleft, color):
     roi = img[topleft[1]:topleft[1]+h, topleft[0]:topleft[0]+w, :]
     cv2.addWeighted(patch[0:h, 0:w, :], ALPHA, roi, 1 - ALPHA, 0, roi)
     return img
+
+
+def reduce_month(accu, item):
+    if 'pi' not in item:
+        return accu
+    year = item.split('/')[2][:4]
+    if year not in accu:
+        accu[year] = dict()
+    month = item.split('/')[2][4:6]
+    if month in accu[year]:
+        accu[year][month] +=1
+    else:
+        accu[year][month] = 1
+    return accu
+
+def reduce_year(accu, item):
+    if 'pi' not in item:
+        return accu
+    year = item.split('/')[2][:4]
+    if year in accu:
+        accu[year] +=1
+    else:
+        accu[year] = 1
+    return accu
+
+
+def reduce_hour(accu, item):
+    if 'pi' not in item:
+        return accu
+    condition = item.split('/')[3][:2]
+    if condition in accu:
+        accu[condition] +=1
+    else:
+        accu[condition] = 1
+    return accu
+
+
+def reduce_object(accu, item):
+    if 'pi' not in item:
+        return accu
+    condition = item.split('/')[3].split('_')[1].split('-')
+    for val in condition:
+        if val in accu:
+            accu[val] +=1
+        else:
+            accu[val] = 1
+    return accu
+
+def reduce_tracking(accu, item):
+    if 'pi' not in item:
+        return accu
+    condition = item.split('/')[3].split('_')[2].split('-')
+    for val in condition:
+        if val in accu:
+            accu[val] +=1
+        else:
+            accu[val] = 1
+    return accu

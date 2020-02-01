@@ -10,6 +10,8 @@ from itertools import islice
 from dotenv import load_dotenv
 from datetime import datetime
 from flask import Flask, Response, send_from_directory, request, abort
+from backend.utils import (reduce_month, reduce_year, reduce_hour,
+        reduce_object, reduce_tracking)
 
 WIDTH = 320
 HEIGHT = 240
@@ -138,57 +140,12 @@ def single_image():
                       width=WIDTH,
                       height=HEIGHT))
 
-def reduce_month(accu, item):
-    if 'pi' not in item:
-        return accu
-    year = item.split('/')[2][:4]
-    if year not in accu:
-        accu[year] = dict()
-    month = item.split('/')[2][4:6]
-    if month in accu[year]:
-        accu[year][month] +=1
-    else:
-        accu[year][month] = 1
-    return accu
-
-def reduce_year(accu, item):
-    if 'pi' not in item:
-        return accu
-    year = item.split('/')[2][:4]
-    if year in accu:
-        accu[year] +=1
-    else:
-        accu[year] = 1
-    return accu
-
-
-def reduce_hour(accu, item):
-    if 'pi' not in item:
-        return accu
-    condition = item.split('/')[3][:2]
-    if condition in accu:
-        accu[condition] +=1
-    else:
-        accu[condition] = 1
-    return accu
-
-
-def reduce_object(accu, item):
-    if 'pi' not in item:
-        return accu
-    condition = item.split('/')[3].split('_')[1].split('-')
-    for val in condition:
-        if val in accu:
-            accu[val] +=1
-        else:
-            accu[val] = 1
-    return accu
-
 myconditions = dict(
         month=reduce_month,
         year=reduce_year,
         hour=reduce_hour,
         detected_object=reduce_object,
+        tracking_object=reduce_tracking,
         )
 
 

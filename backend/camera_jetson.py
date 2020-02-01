@@ -1,13 +1,16 @@
 import os
 import cv2
+import glob
 import base64
 import numpy as np
 from celery import Celery
+from functools import reduce
 from dotenv import load_dotenv
 from importlib import import_module
 from datetime import datetime, timedelta
 from backend.centroidtracker import CentroidTracker
 from backend.base_camera import BaseCamera
+from backend.utils import reduce_tracking
 
 load_dotenv('.env')
 Detector = import_module('backend.' + os.environ['DETECTION_MODEL']).Detector
@@ -19,7 +22,7 @@ celery.conf.update(
         result_backend='redis://localhost:6379/0',
 )
 
-IMAGE_FOLDER = "./imgs"
+IMAGE_FOLDER = "imgs"
 
 def gstreamer_pipeline(
     capture_width=1280,
@@ -104,7 +107,11 @@ def CaptureContinous(self):
 
 @celery.task(bind=True)
 def ObjectTracking(self):
-    ct = CentroidTracker()
+    myiter = glob.iglob(os.path.join(IMAGE_FOLDER, '**', '*.jpg'),
+                        recursive=True)
+    newdict = reduce(lambda a, b: reduce_tracking(a,b), myiter, dict())
+    startID = int(max(list(newdict.keys()), default=0)) + 1
+    ct = CentroidTracker(startID=startID)
     camera = cv2.VideoCapture(gstreamer_pipeline(flip_method=0), cv2.CAP_GSTREAMER)
     if not camera.isOpened():
         raise RuntimeError('Could not start camera.')
@@ -114,9 +121,10 @@ def ObjectTracking(self):
             _, img = camera.read()
             boxes, confs, clss = detector.prediction(img, conf_th=0.8, conf_class=[1])
             img = detector.draw_boxes(img, boxes, confs, clss)
+            previous_object_ID = ct.nextObjectID
             objects = ct.update(boxes)
-            if len(boxes) > 0 and 1 in clss:
-                print("detected {} {} {}".format(confs, objects, boxes))
+            if len(boxes) > 0 and 1 in clss and previous_object_ID in list(objects.keys()):
+                print("detected {} {} {} {}".format(ct.nextObjectID, confs, objects, boxes))
 
                 # loop over the tracked objects
                 for (objectID, centroid) in objects.items():
@@ -130,10 +138,9 @@ def ObjectTracking(self):
                 if not os.path.exists(directory):
                     os.makedirs(directory)
                 ids = "-".join(list([str(i) for i in objects.keys()]))
-                print(ids)
                 hour = datetime.now().strftime("%H%M%S")
                 filename_output = os.path.join(
-                        directory, "{}_{}_.jpg".format(hour, ids)
+                        directory, "{}_person_{}_.jpg".format(hour, ids)
                         )
                 cv2.imwrite(filename_output, img)
     except KeyboardInterrupt:

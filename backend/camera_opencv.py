@@ -13,7 +13,6 @@ from backend.utils import reduce_tracking
 
 load_dotenv()
 Detector = import_module('backend.' + os.environ['DETECTION_MODEL']).Detector
-detector = Detector()
 
 celery = Celery("app")
 celery.conf.update(
@@ -35,7 +34,6 @@ IMAGE_FOLDER = "imgs"
 
 class Camera(BaseCamera):
     video_source = 0
-    ct = CentroidTracker()
 
     @staticmethod
     def set_video_source(source):
@@ -53,21 +51,25 @@ class Camera(BaseCamera):
 
             yield img
 
-    @staticmethod
-    def prediction(img):
-        output = detector.prediction(img)
-        df = detector.filter_prediction(output, img)
-        img = detector.draw_boxes(img, df)
+class Predictor(object):
+    """Docstring for Predictor. """
+
+    def __init__(self):
+        self.detector = Detector()
+        self.ct = CentroidTracker(maxDisappeared=50)
+
+    def prediction(self, img, conf_th=0.3, conf_class=[]):
+        output = self.detector.prediction(img)
+        df = self.detector.filter_prediction(output, img, conf_th=conf_th, conf_class=conf_class)
+        img = self.detector.draw_boxes(img, df)
         return img
 
-    @staticmethod
-    def object_track(img):
-        output = detector.prediction(img)
-        df = detector.filter_prediction(output, img)
-        img = detector.draw_boxes(img, df)
+    def object_track(self, img, conf_th=0.3, conf_class=[]):
+        output = self.detector.prediction(img)
+        df = self.detector.filter_prediction(output, img, conf_th=conf_th, conf_class=conf_class)
+        img = self.detector.draw_boxes(img, df)
         boxes = df[['x1', 'y1', 'x2', 'y2']].values
-        print(df)
-        objects = Camera.ct.update(boxes)
+        objects = self.ct.update(boxes)
         if len(boxes) > 0 and (df['class_name'].str.contains('person').any()):
             for (objectID, centroid) in objects.items():
                 text = "ID {}".format(objectID)
@@ -76,8 +78,7 @@ class Camera(BaseCamera):
                 cv2.circle(img, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
         return img
 
-    @staticmethod
-    def img_to_base64(img):
+    def img_to_base64(self, img):
         """encode as a jpeg image and return it"""
         buffer = cv2.imencode('.jpg', img)[1].tobytes()
         jpg_as_text = base64.b64encode(buffer)
@@ -86,10 +87,9 @@ class Camera(BaseCamera):
 
 
 @celery.task(bind=True)
-def CaptureContinous(self):
+def CaptureContinous(self, detector):
     cap = cv2.VideoCapture(0)
-    # Capture frame-by-frame
-    ret, image = cap.read()
+    _, image = cap.read()
     cap.release()
     output = detector.prediction(image)
     df = detector.filter_prediction(output, image)
@@ -113,10 +113,11 @@ def CaptureContinous(self):
 
 @celery.task(bind=True)
 def ObjectTracking(self):
+    detector = Detector()
     myiter = glob.iglob(os.path.join(IMAGE_FOLDER, '**', '*.jpg'),
                         recursive=True)
     newdict = reduce(lambda a, b: reduce_tracking(a,b), myiter, dict())
-    startID = int(max(list(newdict.keys()), default=0)) + 1
+    startID = max(map(int, newdict.keys()), default=0) + 1
     ct = CentroidTracker(startID=startID)
     camera = cv2.VideoCapture(0)
     if not camera.isOpened():
@@ -125,14 +126,15 @@ def ObjectTracking(self):
     try:
         while True:
             _, img = camera.read()
-            #boxes, confs, clss = detector.prediction(img, conf_th=0.8, conf_class=[1])
-            #img = detector.draw_boxes(img, boxes, confs, clss)
-
             output = detector.prediction(img)
             df = detector.filter_prediction(output, img)
             img = detector.draw_boxes(img, df)
             boxes = df[['x1', 'y1', 'x2', 'y2']].values
             previous_object_ID = ct.nextObjectID
+            #self.update_state(state='PROGRESS',
+            #        meta={
+            #            'object_id': previous_object_ID,
+            #            })
             objects = ct.update(boxes)
             if len(boxes) > 0 and (df['class_name'].str.contains('person').any()) and previous_object_ID in list(objects.keys()):
                 for (objectID, centroid) in objects.items():
@@ -166,4 +168,4 @@ def ObjectTracking(self):
 
 
 if __name__ == '__main__':
-    CaptureContinous()
+    ObjectTracking()

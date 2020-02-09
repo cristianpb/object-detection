@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 from backend.utils import timeit, draw_boxed_text
 
-THRESHOLD = 0.5
 DETECTION_MODEL = 'ssd_mobilenet/'
 SWAPRB = True
 
@@ -32,7 +31,7 @@ class Detector():
         return result
 
     @timeit
-    def filter_prediction(self, output, image):
+    def filter_prediction(self, output, image, conf_th=0.5, conf_class=[]):
         height, width = image.shape[:-1]
         df = pd.DataFrame(
                 output,
@@ -55,7 +54,9 @@ class Detector():
                 )
         df['label'] = (df['class_name'] + ': ' +
                        df['confidence'].astype(str).str.slice(stop=4))
-        df = df[df['confidence'] > THRESHOLD]
+        df = df[df['confidence'] > conf_th]
+        if len(conf_class) > 0:
+            df = df[df['class_id'].isin(conf_class)]
         return df
 
     def draw_boxes(self, image, df):

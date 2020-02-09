@@ -2,6 +2,7 @@ import os
 import cv2
 import glob
 import base64
+import time
 import numpy as np
 from celery import Celery
 from functools import reduce
@@ -14,12 +15,20 @@ from backend.utils import reduce_tracking
 
 load_dotenv('.env')
 Detector = import_module('backend.' + os.environ['DETECTION_MODEL']).Detector
-detector = Detector()
 
 celery = Celery("app")
 celery.conf.update(
         broker_url='redis://localhost:6379/0',
         result_backend='redis://localhost:6379/0',
+        beat_schedule={
+            "photos_SO": {
+                "task": "backend.camera_pi.CaptureContinous",
+                "schedule": timedelta(
+                    seconds=int(str(os.environ['BEAT_INTERVAL']))
+                    ),
+                "args": []
+                }
+            }
 )
 
 IMAGE_FOLDER = "imgs"
@@ -54,7 +63,6 @@ def gstreamer_pipeline(
 
 class Camera(BaseCamera):
     video_source = 0
-    ct = CentroidTracker()
 
     @staticmethod
     def set_video_source(source):
@@ -72,17 +80,23 @@ class Camera(BaseCamera):
 
             yield img
 
-    @staticmethod
-    def prediction(img, conf_th=0.3, conf_class=[]):
-        boxes, confs, clss = detector.prediction(img, conf_th=conf_th, conf_class=conf_class)
-        img = detector.draw_boxes(img, boxes, confs, clss)
+
+class Predictor(object):
+    """Docstring for Predictor. """
+
+    def __init__(self):
+        self.detector = Detector()
+        self.ct = CentroidTracker(maxDisappeared=20)
+
+    def prediction(self, img, conf_th=0.3, conf_class=[]):
+        boxes, confs, clss = self.detector.prediction(img, conf_th=conf_th, conf_class=conf_class)
+        img = self.detector.draw_boxes(img, boxes, confs, clss)
         return img
 
-    @staticmethod
-    def object_track(img, conf_th=0.3, conf_class=[]):
-        boxes, confs, clss = detector.prediction(img, conf_th=conf_th, conf_class=conf_class)
-        img = detector.draw_boxes(img, boxes, confs, clss)
-        objects = Camera.ct.update(boxes)
+    def object_track(self, img, conf_th=0.3, conf_class=[]):
+        boxes, confs, clss = self.detector.prediction(img, conf_th=conf_th, conf_class=conf_class)
+        img = self.detector.draw_boxes(img, boxes, confs, clss)
+        objects = self.ct.update(boxes)
         if len(boxes) > 0 and 1 in clss:
             for (objectID, centroid) in objects.items():
                 text = "ID {}".format(objectID)
@@ -91,8 +105,7 @@ class Camera(BaseCamera):
                 cv2.circle(img, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
         return img
 
-    @staticmethod
-    def img_to_base64(img):
+    def img_to_base64(self, img):
         """encode as a jpeg image and return it"""
         buffer = cv2.imencode('.jpg', img)[1].tobytes()
         jpg_as_text = base64.b64encode(buffer)
@@ -101,16 +114,17 @@ class Camera(BaseCamera):
 
 
 @celery.task(bind=True)
-def CaptureContinous(self):
+def CaptureContinous(self, detector):
     pass
 
 
 @celery.task(bind=True)
 def ObjectTracking(self):
+    detector = Detector()
     myiter = glob.iglob(os.path.join(IMAGE_FOLDER, '**', '*.jpg'),
                         recursive=True)
     newdict = reduce(lambda a, b: reduce_tracking(a,b), myiter, dict())
-    startID = int(max(list(newdict.keys()), default=0)) + 1
+    startID = max(map(int, newdict.keys()), default=0) + 1
     ct = CentroidTracker(startID=startID)
     camera = cv2.VideoCapture(gstreamer_pipeline(flip_method=0), cv2.CAP_GSTREAMER)
     if not camera.isOpened():
@@ -143,6 +157,7 @@ def ObjectTracking(self):
                         directory, "{}_person_{}_.jpg".format(hour, ids)
                         )
                 cv2.imwrite(filename_output, img)
+            time.sleep(0.100)
     except KeyboardInterrupt:
         print('interrupted!')
         camera.release()
@@ -157,5 +172,6 @@ def ObjectTracking(self):
 
 
 if __name__ == '__main__':
-    #CaptureContinous()
-    ObjectTracking()
+    detector = Detector()
+    #CaptureContinous(detector)
+    ObjectTracking(detector)

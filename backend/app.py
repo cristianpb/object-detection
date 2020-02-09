@@ -25,7 +25,9 @@ else:
 if os.getenv('CAMERA'):
     Camera = import_module('backend.camera_' + os.environ['CAMERA']).Camera
     ObjectTracking = import_module('backend.camera_' + os.environ['CAMERA']).ObjectTracking
+    Predictor = import_module('backend.camera_' + os.environ['CAMERA']).Predictor
     celery = import_module('backend.camera_' + os.environ['CAMERA']).celery
+    predictor = Predictor()
 else:
     print('Default USB camera')
     from backend.camera_opencv import Camera
@@ -133,10 +135,10 @@ def single_image():
     tracking = bool(request.args.get('tracking', False))
     frame = Camera().get_frame()
     if detection:
-        frame = Camera().prediction(frame)
+        frame = predictor.prediction(frame, conf_th=0.3, conf_class=[])
     elif tracking:
-        frame = Camera().object_track(frame)
-    return json.dumps(dict(img=Camera().img_to_base64(frame),
+        frame = predictor.object_track(frame, conf_th=0.5, conf_class=[1])
+    return json.dumps(dict(img=predictor.img_to_base64(frame),
                       width=WIDTH,
                       height=HEIGHT))
 
@@ -164,54 +166,45 @@ def list_folder():
     return json.dumps(newdict)
 
 
-@app.route('/status/<task_id>')
+@app.route('/api/task/status/<task_id>')
 def taskstatus(task_id):
-    task = ObjectTracking.AsyncResult(task_id)
+    #task = ObjectTracking.AsyncResult(task_id)
+    task = predictor.continous_object_tracking.AsyncResult(task_id)
     if task.state == 'PENDING':
         response = {
             'state': task.state,
-            'current': 0,
-            'total': 1,
-            'status': 'Pending...'
+            'object_id': 0,
         }
     elif task.state != 'FAILURE':
         response = {
             'state': task.state,
-            'current': task.info.get('current', 0),
-            'total': task.info.get('total', 1),
-            'status': task.info.get('status', ''),
-            'partial_result': task.info.get('partial_result', list())
+            'object_id': task.info.get('object_id', 0),
         }
-        if 'result' in task.info:
-            response['result'] = task.info['result']
     else:
-        # something went wrong in the background job
         response = {
             'state': task.state,
-            'current': 1,
-            'total': 1,
-            'status': str(task.info),  # this is the exception raised
+            'object_id': task.info.get('object_id', 0),
         }
     return json.dumps(response)
 
 
-@app.route('/launch')
+@app.route('/api/task/launch')
 def launch_object_tracking():
     task = ObjectTracking.delay()
-    #return json.dumps({"task_id": task})
+    #task = predictor.continous_object_tracking.delay()
     return json.dumps({"task_id": task.id})
 
-@app.route('/killtask/<task_id>')
+@app.route('/api/task/kill/<task_id>')
 def killtask(task_id):
-    response = celery.control.revoke(task_id, terminate=True)
+    response = celery.control.revoke(task_id, terminate=True, wait=True, timeout=10)
     return json.dumps(response)
 
-@app.route('/tracking/read')
-def read_tracking():
-    df =pd.read_csv('{}/tracking.csv'.format(IMAGE_FOLDER), header=None, names=['date', 'hour', 'idx', 'coord'])
-    print(df.head())
-    print(df.to_dict(orient='records'))
-    return json.dumps(df.to_dict(orient='records'))
+#@app.route('/tracking/read')
+#def read_tracking():
+#    df =pd.read_csv('{}/tracking.csv'.format(IMAGE_FOLDER), header=None, names=['date', 'hour', 'idx', 'coord'])
+#    print(df.head())
+#    print(df.to_dict(orient='records'))
+#    return json.dumps(df.to_dict(orient='records'))
 
 @app.route('/')
 def status():

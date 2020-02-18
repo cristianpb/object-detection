@@ -89,12 +89,14 @@ class Predictor(object):
         self.ct = CentroidTracker(maxDisappeared=20)
 
     def prediction(self, img, conf_th=0.3, conf_class=[]):
-        boxes, confs, clss = self.detector.prediction(img, conf_th=conf_th, conf_class=conf_class)
+        output = self.detector.prediction(img)
+        boxes, confs, clss = self.detector.filter_prediction(output, img, conf_th=conf_th, conf_class=conf_class)
         img = self.detector.draw_boxes(img, boxes, confs, clss)
         return img
 
     def object_track(self, img, conf_th=0.3, conf_class=[]):
-        boxes, confs, clss = self.detector.prediction(img, conf_th=conf_th, conf_class=conf_class)
+        output = self.detector.prediction(img)
+        boxes, confs, clss = self.detector.filter_prediction(output, img, conf_th=conf_th, conf_class=conf_class)
         img = self.detector.draw_boxes(img, boxes, confs, clss)
         objects = self.ct.update(boxes)
         if len(boxes) > 0 and 1 in clss:

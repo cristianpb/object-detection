@@ -18,7 +18,6 @@ from backend.utils import reduce_tracking
 
 load_dotenv()
 Detector = import_module('backend.' + os.environ['DETECTION_MODEL']).Detector
-detector = Detector()
 
 WIDTH = 640
 HEIGHT = 480
@@ -44,7 +43,7 @@ class Camera(BaseCamera):
     @staticmethod
     def frames():
         with PiCamera() as camera:
-            camera.rotation = 180
+            camera.rotation = int(str(os.environ['CAMERA_ROTATION']))
             stream = io.BytesIO()
             for _ in camera.capture_continuous(stream, 'jpeg',
                                                use_video_port=True):
@@ -70,13 +69,13 @@ class Predictor(object):
     def prediction(self, img, conf_th=0.3, conf_class=[]):
         output = self.detector.prediction(img)
         df = self.detector.filter_prediction(output, img, conf_th=conf_th, conf_class=conf_class)
-        img = detector.draw_boxes(img, df)
+        img = self.detector.draw_boxes(img, df)
         return img
 
     def object_track(self, img, conf_th=0.3, conf_class=[]):
         output = self.detector.prediction(img)
         df = self.detector.filter_prediction(output, img, conf_th=conf_th, conf_class=conf_class)
-        img = detector.draw_boxes(img, df)
+        img = self.detector.draw_boxes(img, df)
         boxes = df[['x1', 'y1', 'x2', 'y2']].values
         objects = self.ct.update(boxes)
         if len(boxes) > 0 and (df['class_name'].str.contains('person').any()):
@@ -97,9 +96,10 @@ class Predictor(object):
 
 @celery.task(bind=True)
 def CaptureContinous(self):
+    detector = Detector()
     with PiCamera() as camera:
         camera.resolution = (1280, 960)  # twice height and widht
-        camera.rotation = 180
+        camera.rotation = int(str(os.environ['CAMERA_ROTATION']))
         camera.framerate = 10
         with PiRGBArray(camera, size=(WIDTH, HEIGHT)) as output:
             camera.capture(output, 'bgr', resize=(WIDTH, HEIGHT))
@@ -134,7 +134,7 @@ def ObjectTracking(self):
     ct = CentroidTracker(startID=startID)
     with PiCamera() as camera:
         camera.resolution = (1280, 960)  # twice height and widht
-        camera.rotation = 180
+        camera.rotation = int(str(os.environ['CAMERA_ROTATION']))
         camera.framerate = 10
         with PiRGBArray(camera, size=(WIDTH, HEIGHT)) as output:
             while True:

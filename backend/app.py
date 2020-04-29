@@ -221,5 +221,5 @@ if __name__ == '__main__':
             host='0.0.0.0',
             debug=bool(os.getenv('DEBUG')),
             threaded=False,
-            port=int(str(os.getenv('PORT')))
+            port=PORT
             )

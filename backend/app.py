@@ -9,7 +9,7 @@ from importlib import import_module
 from itertools import islice
 from dotenv import load_dotenv
 from datetime import datetime
-from flask import Flask, Response, send_from_directory, request, abort
+from flask import Flask, Response, send_from_directory, request, Blueprint, abort
 from backend.utils import (reduce_month, reduce_year, reduce_hour,
         reduce_object, reduce_tracking)
 
@@ -34,7 +34,16 @@ else:
 
 app = Flask(__name__)
 
+# static html
+blueprint_html = Blueprint('html', __name__)
 
+@blueprint_html.route('/', defaults={'filename': 'index.html'})
+@blueprint_html.route('/<path:filename>')
+def show_pages(filename):
+    return send_from_directory('../dist', filename)
+app.register_blueprint(blueprint_html)
+
+# API
 @app.route(os.path.join('/', IMAGE_FOLDER, '<path:filename>'))
 def image_preview(filename):
     w = request.args.get('w', None)
@@ -205,16 +214,6 @@ def killtask(task_id):
 #    print(df.head())
 #    print(df.to_dict(orient='records'))
 #    return json.dumps(df.to_dict(orient='records'))
-
-@app.route('/')
-def status():
-    return send_from_directory('../dist', "index.html")
-
-
-@app.route('/<path:path>')
-def build(path):
-    return send_from_directory('../dist', path)
-
 
 if __name__ == '__main__':
     app.run(

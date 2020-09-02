@@ -32,10 +32,15 @@ else:
     print('Default USB camera')
     from backend.camera_opencv import Camera
 
+if os.getenv('BASEURL') and os.getenv('BASEURL') is not None:
+    BASEURL=os.getenv('BASEURL').replace('\\', '')
+else:
+    BASEURL='/'
+
 app = Flask(__name__)
 
 # static html
-blueprint_html = Blueprint('html', __name__)
+blueprint_html = Blueprint('html', __name__, url_prefix=BASEURL)
 
 @blueprint_html.route('/', defaults={'filename': 'index.html'})
 @blueprint_html.route('/<path:filename>')
@@ -44,7 +49,9 @@ def show_pages(filename):
 app.register_blueprint(blueprint_html)
 
 # API
-@app.route(os.path.join('/', IMAGE_FOLDER, '<path:filename>'))
+blueprint_api = Blueprint('api', __name__, url_prefix=BASEURL)
+
+@blueprint_api.route(os.path.join('/', IMAGE_FOLDER, '<path:filename>'))
 def image_preview(filename):
     w = request.args.get('w', None)
     h = request.args.get('h', None)
@@ -73,7 +80,7 @@ def image_preview(filename):
     return send_from_directory('.', filename)
 
 
-@app.route('/api/delete', methods=['POST'])
+@blueprint_api.route('/api/delete', methods=['POST'])
 def delete_image():
     filename = request.form.get('filename', None)
     try:
@@ -98,7 +105,7 @@ def get_data(item):
         return dict(path=item)
 
 
-@app.route('/api/images')
+@blueprint_api.route('/api/images')
 def api_images():
     page = int(request.args.get('page', 0))
     page_size = int(request.args.get('page_size', 16))
@@ -138,7 +145,7 @@ def api_images():
     return json.dumps(result)
 
 
-@app.route('/api/single_image')
+@blueprint_api.route('/api/single_image')
 def single_image():
     detection = bool(request.args.get('detection', False))
     tracking = bool(request.args.get('tracking', False))
@@ -160,7 +167,7 @@ myconditions = dict(
         )
 
 
-@app.route('/api/list_files')
+@blueprint_api.route('/api/list_files')
 def list_folder():
     condition = request.args.get('condition', 'year')
     myiter = glob.iglob(os.path.join(IMAGE_FOLDER, '**', '*.jpg'),
@@ -175,7 +182,7 @@ def list_folder():
     return json.dumps(newdict)
 
 
-@app.route('/api/task/status/<task_id>')
+@blueprint_api.route('/api/task/status/<task_id>')
 def taskstatus(task_id):
     #task = ObjectTracking.AsyncResult(task_id)
     task = predictor.continous_object_tracking.AsyncResult(task_id)
@@ -197,23 +204,25 @@ def taskstatus(task_id):
     return json.dumps(response)
 
 
-@app.route('/api/task/launch')
+@blueprint_api.route('/api/task/launch')
 def launch_object_tracking():
     task = ObjectTracking.delay()
     #task = predictor.continous_object_tracking.delay()
     return json.dumps({"task_id": task.id})
 
-@app.route('/api/task/kill/<task_id>')
+@blueprint_api.route('/api/task/kill/<task_id>')
 def killtask(task_id):
     response = celery.control.revoke(task_id, terminate=True, wait=True, timeout=10)
     return json.dumps(response)
 
-#@app.route('/tracking/read')
+#@blueprint_api.route('/tracking/read')
 #def read_tracking():
 #    df =pd.read_csv('{}/tracking.csv'.format(IMAGE_FOLDER), header=None, names=['date', 'hour', 'idx', 'coord'])
 #    print(df.head())
 #    print(df.to_dict(orient='records'))
 #    return json.dumps(df.to_dict(orient='records'))
+
+app.register_blueprint(blueprint_api)
 
 if __name__ == '__main__':
     app.run(

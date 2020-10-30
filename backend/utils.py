@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 import logging
 import time
+import base64
 
 ALPHA = 0.5
 FONT = cv2.FONT_HERSHEY_PLAIN
@@ -35,6 +36,12 @@ def timeit(method):
 
     return timed
 
+def img_to_base64(img):
+    """encode as a jpeg image and return it"""
+    buffer = cv2.imencode('.jpg', img)[1].tobytes()
+    jpg_as_text = base64.b64encode(buffer)
+    base64_string = jpg_as_text.decode('utf-8')
+    return base64_string
 
 def draw_boxed_text(img, text, topleft, color):
     """Draw a transluent boxed text in white, overlayed on top of a

@@ -11,11 +11,12 @@ from dotenv import load_dotenv
 from datetime import datetime
 from flask import Flask, Response, send_from_directory, request, Blueprint, abort
 from backend.utils import (reduce_month, reduce_year, reduce_hour,
-        reduce_object, reduce_tracking)
+        reduce_object, reduce_tracking, img_to_base64)
 
 WIDTH = 320
 HEIGHT = 240
 IMAGE_FOLDER = 'imgs'
+predictor = None
 load_dotenv('.env')
 if os.getenv('PORT'):
     PORT = int(str(os.getenv('PORT')))
@@ -27,7 +28,6 @@ if os.getenv('CAMERA'):
     ObjectTracking = import_module('backend.camera_' + os.environ['CAMERA']).ObjectTracking
     Predictor = import_module('backend.camera_' + os.environ['CAMERA']).Predictor
     celery = import_module('backend.camera_' + os.environ['CAMERA']).celery
-    predictor = Predictor()
 else:
     print('Default USB camera')
     from backend.camera_opencv import Camera
@@ -147,14 +147,17 @@ def api_images():
 
 @blueprint_api.route('/api/single_image')
 def single_image():
+    global predictor
     detection = bool(request.args.get('detection', False))
     tracking = bool(request.args.get('tracking', False))
     frame = Camera().get_frame()
     if detection:
+        if predictor is None:
+            predictor = Predictor()
         frame = predictor.prediction(frame, conf_th=0.3, conf_class=[])
     elif tracking:
         frame = predictor.object_track(frame, conf_th=0.5, conf_class=[1])
-    return json.dumps(dict(img=predictor.img_to_base64(frame),
+    return json.dumps(dict(img=img_to_base64(frame),
                       width=WIDTH,
                       height=HEIGHT))
 

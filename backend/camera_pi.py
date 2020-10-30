@@ -86,13 +86,6 @@ class Predictor(object):
                 cv2.circle(img, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
         return img
 
-    def img_to_base64(self, img):
-        """encode as a jpeg image and return it"""
-        buffer = cv2.imencode('.jpg', img)[1].tobytes()
-        jpg_as_text = base64.b64encode(buffer)
-        base64_string = jpg_as_text.decode('utf-8')
-        return base64_string
-
 
 @celery.task(bind=True)
 def CaptureContinous(self):

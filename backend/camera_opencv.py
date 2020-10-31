@@ -80,7 +80,7 @@ class Predictor(object):
 
 
 @celery.task(bind=True)
-def CaptureContinous(self, detector):
+def CaptureContinous(self):
     cap = cv2.VideoCapture(0)
     _, image = cap.read()
     cap.release()

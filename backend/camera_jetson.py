@@ -116,7 +116,7 @@ class Predictor(object):
 
 
 @celery.task(bind=True)
-def CaptureContinous(self, detector):
+def CaptureContinous(self):
     pass
 
 

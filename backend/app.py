@@ -156,6 +156,8 @@ def single_image():
             predictor = Predictor()
         frame = predictor.prediction(frame, conf_th=0.3, conf_class=[])
     elif tracking:
+        if predictor is None:
+            predictor = Predictor()
         frame = predictor.object_track(frame, conf_th=0.5, conf_class=[1])
     return json.dumps(dict(img=img_to_base64(frame),
                       width=WIDTH,

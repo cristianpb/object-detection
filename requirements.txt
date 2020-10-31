@@ -3,7 +3,7 @@ opencv-python-headless==4.4.0.44
 pandas==1.1.4
 Pillow==8.0.1
 python-dotenv==0.15.0
-celery==5.0.1
+celery==4.4.7
 redis==3.5.3
 imutils==0.5.3
 flower==0.9.5

@@ -31,7 +31,7 @@ venv:
 	fi
 
 dist:
-	git clone --single-branch --branch builds https://github.com/cristianpb/object-detection-frontend dist
+	git clone --single-branch --depth=1 --branch builds https://github.com/cristianpb/object-detection-frontend dist
 
 push:
 	rsync -avz --exclude 'backend.egg-info' --exclude 'dist' --exclude '.env' --exclude 'git' --exclude 'imgs' --exclude 'models' --exclude '.mypy_cache' --exclude '.pytest_cache' --exclude 'venv' * jetson:~/object-detection/

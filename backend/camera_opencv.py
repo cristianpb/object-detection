@@ -1,7 +1,7 @@
 import os
 import cv2
-import base64
 import glob
+import time
 from celery import Celery
 from functools import reduce
 from dotenv import load_dotenv
@@ -18,15 +18,6 @@ celery = Celery("app")
 celery.conf.update(
         broker_url='redis://localhost:6379/0',
         result_backend='redis://localhost:6379/0',
-        beat_schedule={
-            "photos_SO": {
-                "task": "backend.camera_opencv.CaptureContinous",
-                "schedule": timedelta(
-                    seconds=int(str(os.environ['BEAT_INTERVAL']))
-                    ),
-                "args": []
-                }
-            }
 )
 
 IMAGE_FOLDER = "imgs"
@@ -103,6 +94,14 @@ def CaptureContinous(self):
                     directory, "{}_{}_.jpg".format(hour, "-".join(classes))
                     )
             cv2.imwrite(filename_output, image)
+
+
+@celery.task(bind=True)
+def PeriodicCaptureContinous(self):
+    interval=int(str(os.environ['BEAT_INTERVAL']))
+    while True:
+        CaptureContinous()
+        time.sleep(interval)
 
 
 @celery.task(bind=True)

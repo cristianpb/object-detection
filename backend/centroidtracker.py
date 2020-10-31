@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-from scipy.spatial import distance as dist
 import numpy as np
 
 class CentroidTracker():
@@ -82,7 +81,7 @@ class CentroidTracker():
             # centroids and input centroids, respectively -- our
             # goal will be to match an input centroid to an existing
             # object centroid
-            D = dist.cdist(np.array(objectCentroids), inputCentroids)
+            D = np.linalg.norm(np.array(objectCentroids) - inputCentroids, axis=1, keepdims=True)
 
             # in order to perform this matching we must (1) find the
             # smallest value in each row and then (2) sort the row

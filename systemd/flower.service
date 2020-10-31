@@ -1,0 +1,11 @@
+[Unit]
+Description=Flower http server for celery workers analysis
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/flower -A backend.camera_opencv --address=0.0.0.0 --port=5555 --url_prefix=flower --logging=info
+WorkingDirectory=/home/pi/object-detection
+User=pi
+
+[Install]
+WantedBy=multi-user.target

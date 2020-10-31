@@ -1,0 +1,11 @@
+[Unit]
+Description=Celery task worker
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 -m celery -A backend.camera_pi worker -B --loglevel=INFO
+WorkingDirectory=/home/pi/object-detection
+User=pi
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,12 @@
+[Unit]
+Description=Flask backend application
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 backend/app.py
+WorkingDirectory=/home/pi/object-detection
+Environment=DEBUG=
+User=pi
+
+[Install]
+WantedBy=multi-user.target

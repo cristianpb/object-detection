@@ -46,8 +46,7 @@ class Camera(BaseCamera):
 
 
 def load_detector():
-    global detector
-    global ct
+    global detector, ct
     detector = Detector()
     ct = CentroidTracker(maxDisappeared=50)
 
@@ -174,5 +173,4 @@ class Predictor(object):
 
 if __name__ == '__main__':
     predictor = Predictor()
-    #Predictor().ObjectTracking.delay()
     CaptureContinous()

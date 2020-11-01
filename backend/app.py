@@ -16,7 +16,6 @@ from backend.utils import (reduce_month, reduce_year, reduce_hour,
 WIDTH = 320
 HEIGHT = 240
 IMAGE_FOLDER = 'imgs'
-predictor = None
 load_dotenv('.env')
 if os.getenv('PORT'):
     PORT = int(str(os.getenv('PORT')))
@@ -25,8 +24,8 @@ else:
 
 if os.getenv('CAMERA'):
     Camera = import_module('backend.camera_' + os.environ['CAMERA']).Camera
-    ObjectTracking = import_module('backend.camera_' + os.environ['CAMERA']).ObjectTracking
     Predictor = import_module('backend.camera_' + os.environ['CAMERA']).Predictor
+    predictor = Predictor()
     celery = import_module('backend.camera_' + os.environ['CAMERA']).celery
 else:
     print('Default USB camera')
@@ -147,17 +146,12 @@ def api_images():
 
 @blueprint_api.route('/api/single_image')
 def single_image():
-    global predictor
     detection = bool(request.args.get('detection', False))
     tracking = bool(request.args.get('tracking', False))
     frame = Camera().get_frame()
     if detection:
-        if predictor is None:
-            predictor = Predictor()
         frame = predictor.prediction(frame, conf_th=0.3, conf_class=[])
     elif tracking:
-        if predictor is None:
-            predictor = Predictor()
         frame = predictor.object_track(frame, conf_th=0.5, conf_class=[1])
     return json.dumps(dict(img=img_to_base64(frame),
                       width=WIDTH,
@@ -211,7 +205,7 @@ def taskstatus(task_id):
 
 @blueprint_api.route('/api/task/launch')
 def launch_object_tracking():
-    task = ObjectTracking.delay()
+    task = predictor.ObjectTracking.delay()
     #task = predictor.continous_object_tracking.delay()
     return json.dumps({"task_id": task.id})
 
@@ -219,6 +213,11 @@ def launch_object_tracking():
 def killtask(task_id):
     response = celery.control.revoke(task_id, terminate=True, wait=True, timeout=10)
     return json.dumps(response)
+
+@blueprint_api.route('/api/beat/launch')
+def launch_beat():
+    task = predictor.PeriodicCaptureContinous.delay()
+    return json.dumps({"task_id": task.id})
 
 #@blueprint_api.route('/tracking/read')
 #def read_tracking():

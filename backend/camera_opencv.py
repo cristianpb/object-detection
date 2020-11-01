@@ -13,6 +13,8 @@ from backend.utils import reduce_tracking
 
 load_dotenv()
 Detector = import_module('backend.' + os.environ['DETECTION_MODEL']).Detector
+detector = None
+ct = None
 
 celery = Celery("app")
 celery.conf.update(
@@ -42,37 +44,17 @@ class Camera(BaseCamera):
 
             yield img
 
-class Predictor(object):
-    """Docstring for Predictor. """
 
-    def __init__(self):
-        self.detector = Detector()
-        self.ct = CentroidTracker(maxDisappeared=50)
-
-    def prediction(self, img, conf_th=0.3, conf_class=[]):
-        output = self.detector.prediction(img)
-        df = self.detector.filter_prediction(output, img, conf_th=conf_th, conf_class=conf_class)
-        img = self.detector.draw_boxes(img, df)
-        return img
-
-    def object_track(self, img, conf_th=0.3, conf_class=[]):
-        output = self.detector.prediction(img)
-        df = self.detector.filter_prediction(output, img, conf_th=conf_th, conf_class=conf_class)
-        img = self.detector.draw_boxes(img, df)
-        boxes = df[['x1', 'y1', 'x2', 'y2']].values
-        objects = self.ct.update(boxes)
-        if len(boxes) > 0 and (df['class_name'].str.contains('person').any()):
-            for (objectID, centroid) in objects.items():
-                text = "ID {}".format(objectID)
-                cv2.putText(img, text, (centroid[0] - 10, centroid[1] - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-                cv2.circle(img, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
-        return img
-
-
-@celery.task(bind=True)
-def CaptureContinous(self):
+def load_detector():
+    global detector
+    global ct
     detector = Detector()
+    ct = CentroidTracker(maxDisappeared=50)
+
+def CaptureContinous():
+    global detector
+    if detector is None:
+        load_detector()
     cap = cv2.VideoCapture(0)
     _, image = cap.read()
     cap.release()
@@ -96,69 +78,101 @@ def CaptureContinous(self):
             cv2.imwrite(filename_output, image)
 
 
-@celery.task(bind=True)
-def PeriodicCaptureContinous(self):
-    interval=int(str(os.environ['BEAT_INTERVAL']))
-    while True:
-        CaptureContinous()
-        time.sleep(interval)
+class Predictor(object):
+
+    def prediction(self, img, conf_th=0.3, conf_class=[]):
+        global detector
+        if detector is None:
+            load_detector()
+        output = detector.prediction(img)
+        df = detector.filter_prediction(output, img, conf_th=conf_th, conf_class=conf_class)
+        img = detector.draw_boxes(img, df)
+        return img
+
+    def object_track(self, img, conf_th=0.3, conf_class=[]):
+        global detector, ct
+        if detector is None:
+            load_detector()
+        output = detector.prediction(img)
+        df = detector.filter_prediction(output, img, conf_th=conf_th, conf_class=conf_class)
+        img = detector.draw_boxes(img, df)
+        boxes = df[['x1', 'y1', 'x2', 'y2']].values
+        objects = ct.update(boxes)
+        if len(boxes) > 0 and (df['class_name'].str.contains('person').any()):
+            for (objectID, centroid) in objects.items():
+                text = "ID {}".format(objectID)
+                cv2.putText(img, text, (centroid[0] - 10, centroid[1] - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                cv2.circle(img, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
+        return img
 
 
-@celery.task(bind=True)
-def ObjectTracking(self):
-    detector = Detector()
-    myiter = glob.iglob(os.path.join(IMAGE_FOLDER, '**', '*.jpg'),
-                        recursive=True)
-    newdict = reduce(lambda a, b: reduce_tracking(a,b), myiter, dict())
-    startID = max(map(int, newdict.keys()), default=0) + 1
-    ct = CentroidTracker(startID=startID)
-    camera = cv2.VideoCapture(0)
-    if not camera.isOpened():
-        raise RuntimeError('Could not start camera.')
-
-    try:
+    @celery.task(bind=True)
+    def PeriodicCaptureContinous(self):
+        interval=int(str(os.environ['BEAT_INTERVAL']))
         while True:
-            _, img = camera.read()
-            output = detector.prediction(img)
-            df = detector.filter_prediction(output, img)
-            img = detector.draw_boxes(img, df)
-            boxes = df[['x1', 'y1', 'x2', 'y2']].values
-            previous_object_ID = ct.nextObjectID
-            #self.update_state(state='PROGRESS',
-            #        meta={
-            #            'object_id': previous_object_ID,
-            #            })
-            objects = ct.update(boxes)
-            if len(boxes) > 0 and (df['class_name'].str.contains('person').any()) and previous_object_ID in list(objects.keys()):
-                for (objectID, centroid) in objects.items():
-                    text = "ID {}".format(objectID)
-                    cv2.putText(img, text, (centroid[0] - 10, centroid[1] - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-                    cv2.circle(img, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
+            CaptureContinous()
+            time.sleep(interval)
 
-                day = datetime.now().strftime("%Y%m%d")
-                directory = os.path.join(IMAGE_FOLDER, 'pi', day)
-                if not os.path.exists(directory):
-                    os.makedirs(directory)
-                ids = "-".join(list([str(i) for i in objects.keys()]))
-                hour = datetime.now().strftime("%H%M%S")
-                filename_output = os.path.join(
-                        directory, "{}_person_{}_.jpg".format(hour, ids)
-                        )
-                cv2.imwrite(filename_output, img)
-            #time.sleep(0.100)
-    except KeyboardInterrupt:
-        print('interrupted!')
-        camera.release()
-        print(type(objects))
-        print(objects)
-    except Exception as e:
-        print('interrupted! by:')
-        print(e)
-        camera.release()
-        print(type(objects))
-        print(objects)
+    @celery.task(bind=True)
+    def ObjectTracking(self):
+        global detector
+        if detector is None:
+            load_detector()
+        myiter = glob.iglob(os.path.join(IMAGE_FOLDER, '**', '*.jpg'),
+                            recursive=True)
+        newdict = reduce(lambda a, b: reduce_tracking(a,b), myiter, dict())
+        startID = max(map(int, newdict.keys()), default=0) + 1
+        ct = CentroidTracker(startID=startID)
+        camera = cv2.VideoCapture(0)
+        if not camera.isOpened():
+            raise RuntimeError('Could not start camera.')
+
+        try:
+            while True:
+                _, img = camera.read()
+                output = detector.prediction(img)
+                df = detector.filter_prediction(output, img)
+                img = detector.draw_boxes(img, df)
+                boxes = df[['x1', 'y1', 'x2', 'y2']].values
+                previous_object_ID = ct.nextObjectID
+                #self.update_state(state='PROGRESS',
+                #        meta={
+                #            'object_id': previous_object_ID,
+                #            })
+                objects = ct.update(boxes)
+                if len(boxes) > 0 and (df['class_name'].str.contains('person').any()) and previous_object_ID in list(objects.keys()):
+                    for (objectID, centroid) in objects.items():
+                        text = "ID {}".format(objectID)
+                        cv2.putText(img, text, (centroid[0] - 10, centroid[1] - 10),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                        cv2.circle(img, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
+
+                    day = datetime.now().strftime("%Y%m%d")
+                    directory = os.path.join(IMAGE_FOLDER, 'pi', day)
+                    if not os.path.exists(directory):
+                        os.makedirs(directory)
+                    ids = "-".join(list([str(i) for i in objects.keys()]))
+                    hour = datetime.now().strftime("%H%M%S")
+                    filename_output = os.path.join(
+                            directory, "{}_person_{}_.jpg".format(hour, ids)
+                            )
+                    cv2.imwrite(filename_output, img)
+                #time.sleep(0.100)
+        except KeyboardInterrupt:
+            print('interrupted!')
+            camera.release()
+            print(type(objects))
+            print(objects)
+        except Exception as e:
+            print('interrupted! by:')
+            print(e)
+            camera.release()
+            print(type(objects))
+            print(objects)
 
 
 if __name__ == '__main__':
-    ObjectTracking()
+    predictor = Predictor()
+    #Predictor().ObjectTracking.delay()
+    CaptureContinous()

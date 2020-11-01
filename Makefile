@@ -79,17 +79,7 @@ celery:
 	elif [ "${CAMERA}" = 'jetson' ]; then \
         python3 -m celery -A backend.camera_jetson worker --purge -c 1 --loglevel=INFO; \
 	else \
-		venv/bin/celery -A backend.camera_opencv worker --loglevel=INFO; \
-	fi
-
-celery_prod:
-	@echo "Launch Celery as daemon $(CAMERA)"
-	@if [ "${CAMERA}" = 'pi' ]; then \
-        python3 -m celery -A backend.camera_pi worker -B --loglevel=ERROR --detach; \
-	elif [ "${CAMERA}" = 'jetson' ]; then \
-        python3 -m celery -A backend.camera_jetson worker --purge -c 1 --loglevel=INFO & \
-	else \
-		venv/bin/celery -A backend.camera_opencv worker -B --loglevel=ERROR --detach; \
+		venv/bin/celery -A backend.camera_opencv worker -B --loglevel=INFO; \
 	fi
 
 flower:
@@ -100,16 +90,6 @@ flower:
 		flower -A backend.camera_jetson --address=0.0.0.0 --port=5555 --log-file-prefix=flower --url_prefix=flower; \
 	else \
 		venv/bin/flower -A backend.camera_opencv --address=0.0.0.0 --port=5555 --log-file-prefix=flower --url_prefix=flower --logging=debug; \
-	fi
-
-flower_prod:
-	@echo "Launch Flower in background for $(CAMERA)"
-	@if [ "${CAMERA}" = 'pi' ]; then \
-		flower -A backend.camera_pi --address=0.0.0.0 --port=5555 --log-file-prefix=flower --url_prefix=flower & \
-	elif [ "${CAMERA}" = 'jetson' ]; then \
-		flower -A backend.camera_jetson --address=0.0.0.0 --port=5555 --log-file-prefix=flower --url_prefix=flower & \
-	else \
-		venv/bin/flower -A backend.camera_opencv --address=0.0.0.0 --port=5555 --log-file-prefix=flower --logging=debug --url_prefix=flower & \
 	fi
 
 clean:

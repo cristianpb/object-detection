@@ -1,5 +1,3 @@
-# The Makefile defines all builds/tests steps
-
 # include .env file
 include .env
 
@@ -7,6 +5,9 @@ include .env
 # buffered logs do not shows in realtime
 PYTHONUNBUFFERED=1
 export
+
+# compose command to merge production file and and dev/tools overrides
+COMPOSE?=docker-compose -f docker-compose.yml
 
 .env:
 	cp .env.sample .env
@@ -89,8 +90,28 @@ flower:
 	elif [ "${CAMERA}" = 'jetson' ]; then \
 		flower -A backend.camera_jetson --address=0.0.0.0 --port=5555 --log-file-prefix=flower --url_prefix=flower; \
 	else \
-		venv/bin/flower -A backend.camera_opencv --address=0.0.0.0 --port=5555 --log-file-prefix=flower --url_prefix=flower --logging=debug; \
+		venv/bin/flower -A backend.camera_opencv --address=0.0.0.0 --port=5555 --log-file-prefix=flower --url_prefix=${BASEURL}/flower --logging=info; \
 	fi
+
+nginx-dev:
+	$(COMPOSE) -f docker-compose-dev.yml up -d nginx
+
+nginx-up:
+	$(COMPOSE) up -d nginx
+
+nginx-down:
+	$(COMPOSE) stop nginx
+
+redis-up:
+	$(COMPOSE) up -d redis
+
+redis-down:
+	$(COMPOSE) stop redis
+
+docker-up: nginx-up redis-up
+
+docker-down:
+	$(COMPOSE) down
 
 clean:
 	rm -rf venv dist

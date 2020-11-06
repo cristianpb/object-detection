@@ -7,7 +7,7 @@ services:
     container_name: ${APP}-nginx
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./nginx/backend.conf:/etc/nginx/templates/default.conf.template
+      - ./nginx/backend.template:/etc/nginx/templates/default.conf.template
     environment:
       - BASEURL=${BASEURL}
       - PORT_NGINX=${PORT_NGINX}

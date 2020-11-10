@@ -8,6 +8,7 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./nginx/backend.template:/etc/nginx/templates/default.conf.template
+      - ./dist:/var/lib/www${BASEURL}:ro
     environment:
       - BASEURL=${BASEURL}
       - PORT_NGINX=${PORT_NGINX}

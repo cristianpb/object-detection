@@ -15,6 +15,13 @@ server {
     gzip_proxied    no-cache no-store private expired auth;
     gzip_min_length 1000;
 
+    root /var/lib/www;
+    index index.html;
+
+    location ${BASEURL}/ {
+        try_files $uri $uri/ =404;
+    }
+
     location ~ ${BASEURL}/flower {
         proxy_pass http://flower;
         proxy_http_version 1.1;
@@ -22,7 +29,7 @@ server {
         proxy_set_header Connection "upgrade";
     }
 
-    location ${BASEURL}/ {
+    location ~ ${BASEURL}/(api|imgs) {
         proxy_pass http://backend;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;

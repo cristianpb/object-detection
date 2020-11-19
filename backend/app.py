@@ -22,6 +22,10 @@ if os.getenv('PORT'):
 else:
     PORT=5000
 
+if os.getenv('CAMERA_STREAM'):
+    CameraStream = import_module('backend.camera_stream').Camera
+    CameraStream.video_source = os.getenv('CAMERA_STREAM')
+
 if os.getenv('CAMERA'):
     Camera = import_module('backend.camera_' + os.environ['CAMERA']).Camera
     Predictor = import_module('backend.camera_' + os.environ['CAMERA']).Predictor
@@ -142,6 +146,21 @@ def api_images():
     result = [get_data(i) for i in islice(myiter, start, end)]
     print('->> Start', start, 'end', end, 'len', len(result))
     return json.dumps(result)
+
+@blueprint_api.route('/api/stream_image')
+def stream_image():
+    url = bool(request.args.get('url', False))
+    detection = bool(request.args.get('detection', False))
+    tracking = bool(request.args.get('tracking', False))
+    if url:
+        frame = CameraStream().get_frame()
+    if detection:
+        frame = predictor.prediction(frame, conf_th=0.3, conf_class=[])
+    elif tracking:
+        frame = predictor.object_track(frame, conf_th=0.5, conf_class=[1])
+    return json.dumps(dict(img=img_to_base64(frame),
+                      width=WIDTH,
+                      height=HEIGHT))
 
 
 @blueprint_api.route('/api/single_image')

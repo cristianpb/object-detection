@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from importlib import import_module
 from datetime import datetime, timedelta
 from backend.centroidtracker import CentroidTracker
-from backend.base_cameraB import BaseCamera
+from backend.base_camera import BaseCamera
 from backend.utils import reduce_tracking
 
 load_dotenv()

@@ -25,10 +25,12 @@ else:
 if os.getenv('CAMERA_STREAM'):
     CameraStream = import_module('backend.camera_stream').Camera
     CameraStream.video_source = os.getenv('CAMERA_STREAM')
+    camera_stream = CameraStream()
 
 if os.getenv('CAMERA'):
     Camera = import_module('backend.camera_' + os.environ['CAMERA']).Camera
     Predictor = import_module('backend.camera_' + os.environ['CAMERA']).Predictor
+    camera = Camera()
     predictor = Predictor()
     celery = import_module('backend.camera_' + os.environ['CAMERA']).celery
 else:
@@ -153,7 +155,7 @@ def stream_image():
     detection = bool(request.args.get('detection', False))
     tracking = bool(request.args.get('tracking', False))
     if url:
-        frame = CameraStream().get_frame()
+        frame = camera_stream.get_frame()
     if detection:
         frame = predictor.prediction(frame, conf_th=0.3, conf_class=[])
     elif tracking:
@@ -167,7 +169,7 @@ def stream_image():
 def single_image():
     detection = bool(request.args.get('detection', False))
     tracking = bool(request.args.get('tracking', False))
-    frame = Camera().get_frame()
+    frame = camera.get_frame()
     if detection:
         frame = predictor.prediction(frame, conf_th=0.3, conf_class=[])
     elif tracking:

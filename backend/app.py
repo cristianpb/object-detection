@@ -23,9 +23,10 @@ else:
     PORT=5000
 
 if os.getenv('CAMERA_STREAM'):
-    CameraStream = import_module('backend.camera_stream').Camera
-    CameraStream.video_source = os.getenv('CAMERA_STREAM')
+    CameraStream = import_module('backend.camera_opencv').Camera
     camera_stream = CameraStream()
+    camera_stream.video_source = os.getenv('CAMERA_STREAM')
+    camera_stream.rotation = os.getenv('CAMERA_STREAM_ROTATION')
 
 if os.getenv('CAMERA'):
     Camera = import_module('backend.camera_' + os.environ['CAMERA']).Camera

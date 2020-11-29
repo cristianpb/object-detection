@@ -26,15 +26,15 @@ IMAGE_FOLDER = "imgs"
 
 
 class Camera(BaseCamera):
+    # default value
     video_source = 0
+    rotation = None
 
-    @staticmethod
-    def set_video_source(source):
-        Camera.video_source = source
+    def set_video_source(self, source):
+        self.video_source = source
 
-    @staticmethod
-    def frames():
-        camera = cv2.VideoCapture(Camera.video_source)
+    def frames(self):
+        camera = cv2.VideoCapture(self.video_source)
         if not camera.isOpened():
             raise RuntimeError('Could not start camera.')
 
@@ -42,6 +42,13 @@ class Camera(BaseCamera):
             # read current frame
             _, img = camera.read()
 
+            if self.rotation:
+                if self.rotation == '90':
+                    img = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)
+                if self.rotation == '180':
+                    img = cv2.rotate(img, cv2.ROTATE_180)
+                if self.rotation == '270':
+                    img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
             yield img
 
 

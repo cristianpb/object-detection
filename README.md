@@ -38,7 +38,7 @@ make up
 For Raspberry Pi install OpenCV 4 fast and optimized for this device:
 
 ```
-git clone https://github.com/dlime/Faster_OpenCV_4_Raspberry_Pi.git
+git clone --single-branch --depth=1 https://github.com/dlime/Faster_OpenCV_4_Raspberry_Pi.git
 cd Faster_OpenCV_4_Raspberry_Pi/debs
 sudo dpkg -i OpenCV*.deb
 sudo ldconfig

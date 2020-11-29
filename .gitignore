@@ -16,3 +16,4 @@ models/ssd_mobilenet/*
 ssd_mobilenet.tar.gz
 *.log
 *.pyc
+*voc.so

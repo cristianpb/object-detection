@@ -49,11 +49,11 @@ class Camera(BaseCamera):
             _, img = camera.read()
 
             if self.rotation:
-                if self.rotation == '90':
+                if self.rotation == 90:
                     img = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)
-                if self.rotation == '180':
+                if self.rotation == 180:
                     img = cv2.rotate(img, cv2.ROTATE_180)
-                if self.rotation == '270':
+                if self.rotation == 270:
                     img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
             yield img
 

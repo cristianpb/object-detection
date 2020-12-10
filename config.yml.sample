@@ -10,6 +10,7 @@ cameras:
     # pi
     # jetson
     rotation: 0
+    name: webcam
 model: ssd_detection
 # Possible models:
 #   ssd_detection 

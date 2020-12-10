@@ -30,6 +30,12 @@ class Camera(BaseCamera):
     video_source = 0
     rotation = None
 
+    def __init__(self, config):
+        if config['source']:
+            self.set_video_source(config['source'])
+        if config['rotation']:
+            self.rotation = config['rotation']
+
     def set_video_source(self, source):
         self.video_source = source
 

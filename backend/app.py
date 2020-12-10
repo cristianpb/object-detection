@@ -26,21 +26,32 @@ if os.getenv('PORT'):
 else:
     PORT=5000
 
-if os.getenv('CAMERA_STREAM'):
-    CameraStream = import_module('backend.camera_opencv').Camera
-    camera_stream = CameraStream()
-    camera_stream.video_source = os.getenv('CAMERA_STREAM')
-    camera_stream.rotation = os.getenv('CAMERA_STREAM_ROTATION')
+cameras = dict()
 
-if os.getenv('CAMERA'):
-    Camera = import_module('backend.camera_' + os.environ['CAMERA']).Camera
-    Predictor = import_module('backend.camera_' + os.environ['CAMERA']).Predictor
-    camera = Camera()
-    predictor = Predictor()
-    celery = import_module('backend.camera_' + os.environ['CAMERA']).celery
-else:
-    print('Default USB camera')
-    from backend.camera_opencv import Camera
+def load_camera(camera_config):
+    Camera = import_module('backend.camera_{}'.format(camera_config['type'])).Camera
+    cameras[camera_config['name']] = Camera(camera_config)
+
+for camera in config['cameras']:
+    load_camera(camera)
+
+print(cameras)
+
+#if os.getenv('CAMERA_STREAM'):
+#    CameraStream = import_module('backend.camera_opencv').Camera
+#    camera_stream = CameraStream()
+#    camera_stream.video_source = os.getenv('CAMERA_STREAM')
+#    camera_stream.rotation = os.getenv('CAMERA_STREAM_ROTATION')
+#
+#if os.getenv('CAMERA'):
+#    Camera = import_module('backend.camera_' + os.environ['CAMERA']).Camera
+#    Predictor = import_module('backend.camera_' + os.environ['CAMERA']).Predictor
+#    camera = Camera()
+#    predictor = Predictor()
+#    celery = import_module('backend.camera_' + os.environ['CAMERA']).celery
+#else:
+#    print('Default USB camera')
+#    from backend.camera_opencv import Camera
 
 if os.getenv('BASEURL') and os.getenv('BASEURL') is not None:
     BASEURL=os.getenv('BASEURL').replace('\\', '')
@@ -172,16 +183,23 @@ def stream_image():
 
 @blueprint_api.route('/api/single_image')
 def single_image():
+    camera_name = request.args.get('cameraName', None)
     detection = bool(request.args.get('detection', False))
     tracking = bool(request.args.get('tracking', False))
-    frame = camera.get_frame()
-    if detection:
-        frame = predictor.prediction(frame, conf_th=0.3, conf_class=[])
-    elif tracking:
-        frame = predictor.object_track(frame, conf_th=0.5, conf_class=[1])
-    return json.dumps(dict(img=img_to_base64(frame),
-                      width=WIDTH,
-                      height=HEIGHT))
+    frame = None
+    if camera_name:
+        #frame = camera.get_frame()
+        frame = cameras[camera_name].get_frame()
+    #if detection:
+    #    frame = predictor.prediction(frame, conf_th=0.3, conf_class=[])
+    #elif tracking:
+    #    frame = predictor.object_track(frame, conf_th=0.5, conf_class=[1])
+    if frame is not None:
+        return json.dumps(dict(img=img_to_base64(frame),
+                          width=WIDTH,
+                          height=HEIGHT))
+    else:
+        return dict(msg='no image')
 
 myconditions = dict(
         month=reduce_month,

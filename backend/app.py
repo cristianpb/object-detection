@@ -3,6 +3,7 @@ import os
 import glob
 import cv2
 import json
+import yaml
 import pandas as pd
 from functools import reduce
 from importlib import import_module
@@ -12,6 +13,9 @@ from datetime import datetime
 from flask import Flask, Response, send_from_directory, request, Blueprint, abort
 from backend.utils import (reduce_month, reduce_year, reduce_hour,
         reduce_object, reduce_tracking, img_to_base64)
+
+with open("config.yml", "r") as yamlfile:
+    config = yaml.load(yamlfile, Loader=yaml.FullLoader)
 
 WIDTH = 320
 HEIGHT = 240
@@ -247,6 +251,10 @@ def launch_beat():
 #    print(df.head())
 #    print(df.to_dict(orient='records'))
 #    return json.dumps(df.to_dict(orient='records'))
+
+@blueprint_api.route('/api/config')
+def read_config():
+    return config
 
 app.register_blueprint(blueprint_api)
 

@@ -12,6 +12,9 @@ COMPOSE?=docker-compose -f docker-compose.yml
 .env:
 	cp .env.sample .env
 
+config.yml:
+	cp config.yml.sample config.yml
+
 venv:
 	@echo "Installing dependencies for $(CAMERA)"
 	@if [ "${CAMERA}" = 'pi' ]; then \
@@ -50,7 +53,7 @@ models/yolo/yolov3.weights:
 
 build: venv models/ssd_mobilenet/frozen_inference_graph.pb
 
-dev: .env dist build
+dev: .env config.yml dist build
 	@echo "Debug mode $(CAMERA) $(PORT)"
 	@if [ "${CAMERA}" = 'pi' ]; then \
 		DEBUG=1 python3 backend/app.py; \
@@ -60,7 +63,7 @@ dev: .env dist build
 		DEBUG=1 venv/bin/python3 backend/app.py; \
 	fi
 
-up: .env dist build
+up: .env config.yml dist build
 	@echo "Up mode $(CAMERA) $(PORT)"
 	@if [ "${CAMERA}" = 'pi' ]; then \
 		DEBUG="" python3 backend/app.py; \

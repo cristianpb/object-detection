@@ -190,8 +190,7 @@ def list_folder():
     # hour = item.split('/')[3][:2]
     # minutes = item.split('/')[3][2:4]
     # return json.dumps({k: v for k, v in sorted(newdict.items(), key=lambda item: item[1], reverse=True)})
-    return json.dumps(newdict)
-
+    return newdict
 
 @blueprint_api.route('/api/task/status/<task_id>')
 def taskstatus(task_id):

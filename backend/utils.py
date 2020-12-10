@@ -1,5 +1,6 @@
 """Utilities for logging."""
 import os
+import re
 import cv2
 import numpy as np
 import logging
@@ -23,6 +24,7 @@ logging.basicConfig(
         )
 logger = logging.getLogger(__name__)
 
+folder_regex = re.compile('imgs/webcam|imgs/pi')
 
 def timeit(method):
 
@@ -81,7 +83,7 @@ def draw_boxed_text(img, text, topleft, color):
 
 
 def reduce_month(accu, item):
-    if 'pi' not in item:
+    if folder_regex.match(item) is None:
         return accu
     year = item.split('/')[2][:4]
     if year not in accu:
@@ -94,7 +96,7 @@ def reduce_month(accu, item):
     return accu
 
 def reduce_year(accu, item):
-    if 'pi' not in item:
+    if folder_regex.match(item) is None:
         return accu
     year = item.split('/')[2][:4]
     if year in accu:
@@ -105,7 +107,7 @@ def reduce_year(accu, item):
 
 
 def reduce_hour(accu, item):
-    if 'pi' not in item:
+    if folder_regex.match(item) is None:
         return accu
     condition = item.split('/')[3][:2]
     if condition in accu:
@@ -116,7 +118,7 @@ def reduce_hour(accu, item):
 
 
 def reduce_object(accu, item):
-    if 'pi' not in item:
+    if folder_regex.match(item) is None:
         return accu
     condition = item.split('/')[3].split('_')[1].split('-')
     for val in condition:
@@ -127,7 +129,7 @@ def reduce_object(accu, item):
     return accu
 
 def reduce_tracking(accu, item):
-    if 'pi' not in item:
+    if folder_regex.match(item) is None:
         return accu
     condition = item.split('/')[3].split('_')[2].split('-')
     for val in condition:

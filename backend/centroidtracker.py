@@ -22,11 +22,11 @@ class CentroidTracker():
         self.objects[self.nextObjectID] = centroid
         self.disappeared[self.nextObjectID] = 0
         self.nextObjectID += 1
-        day = datetime.now().strftime("%Y%m%d")
-        hour = datetime.now().strftime("%H%M%S")
-        myCsvRow = "{},{},\"{}\",\"{}\"\n".format(day, hour, list(self.objects.keys()),[x.tolist() for x in list(self.objects.values())])
-        with open('imgs/tracking.csv','a') as fd:
-            fd.write(myCsvRow)
+        #day = datetime.now().strftime("%Y%m%d")
+        #hour = datetime.now().strftime("%H%M%S")
+        #myCsvRow = "{},{},\"{}\",\"{}\"\n".format(day, hour, list(self.objects.keys()),[x.tolist() for x in list(self.objects.values())])
+        #with open('imgs/tracking.csv','a') as fd:
+        #    fd.write(myCsvRow)
 
     def deregister(self, objectID):
         # to deregister an object ID we delete the object ID from

@@ -5,7 +5,6 @@ import time
 import glob
 import yaml
 import numpy as np
-from celery import Celery
 from functools import reduce
 from datetime import datetime, timedelta
 from importlib import import_module
@@ -25,12 +24,6 @@ ct = None
 WIDTH = 640
 HEIGHT = 480
 IMAGE_FOLDER = "./imgs"
-
-celery = Celery("app")
-celery.conf.update(
-        broker_url='redis://localhost:6379/0',
-        result_backend='redis://localhost:6379/0',
-)
 
 
 class Camera(BaseCamera):
@@ -123,14 +116,12 @@ class Predictor(object):
                 cv2.circle(img, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
         return img
 
-    @celery.task(bind=True)
     def PeriodicCaptureContinous(self):
         interval=config['beat_interval']
         while True:
             CaptureContinous()
             time.sleep(interval)
 
-    @celery.task(bind=True)
     def ObjectTracking(self):
         interval=config['beat_interval']
         detector = Detector()

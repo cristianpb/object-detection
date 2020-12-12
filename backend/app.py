@@ -40,7 +40,6 @@ for camera_config in config['cameras']:
 if len(cameras) > 0:
     Predictor = import_module('backend.camera_' + config['device']).Predictor
     predictor = Predictor()
-    celery = import_module('backend.camera_' + config['device']).celery
 
 if os.getenv('BASEURL') and os.getenv('BASEURL') is not None:
     BASEURL=os.getenv('BASEURL').replace('\\', '')

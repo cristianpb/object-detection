@@ -18,12 +18,12 @@ config.yml:
 venv:
 	@echo "Installing dependencies for $(CAMERA)"
 	@if [ "${CAMERA}" = 'pi' ]; then \
-		sudo apt install python3-dotenv python3-pandas python3-picamera python3-flask python3-celery python3-redis python3-pip; \
+		sudo apt install python3-dotenv python3-pandas python3-picamera python3-flask python3-redis python3-pip; \
 		sudo pip3 install -e .; \
 		mkdir venv; \
 	elif [ "${CAMERA}" = 'jetson' ]; then \
-		sudo apt install python3-dotenv python3-pandas python3-flask python3-celery python3-redis python3-pip; \
-		sudo pip3 install Cython flower; \
+		sudo apt install python3-dotenv python3-pandas python3-flask python3-redis python3-pip; \
+		sudo pip3 install Cython; \
 		sudo apt-get install protobuf-compiler libprotobuf-dev protobuf-compiler; \
 		pip3 install pycuda; \
 		sudo pip3 install -e .; \
@@ -75,26 +75,6 @@ up: .env config.yml dist build
 
 heroku: dist models/ssd_mobilenet/frozen_inference_graph.pb
 	DEBUG="" python3 backend/app.py
-
-celery:
-	@echo "Launch Celery $(CAMERA)"
-	@if [ "${CAMERA}" = 'pi' ]; then \
-        python3 -m celery -A backend.camera_pi worker -B --loglevel=INFO; \
-	elif [ "${CAMERA}" = 'jetson' ]; then \
-        python3 -m celery -A backend.camera_jetson worker --purge -c 1 --loglevel=INFO; \
-	else \
-		venv/bin/celery -A backend.camera_opencv worker -B --loglevel=INFO; \
-	fi
-
-flower:
-	@echo "Launch Flower for $(CAMERA)"
-	@if [ "${CAMERA}" = 'pi' ]; then \
-		flower -A backend.camera_pi --address=0.0.0.0 --port=5555 --log-file-prefix=flower --url_prefix=flower; \
-	elif [ "${CAMERA}" = 'jetson' ]; then \
-		flower -A backend.camera_jetson --address=0.0.0.0 --port=5555 --log-file-prefix=flower --url_prefix=flower; \
-	else \
-		venv/bin/flower -A backend.camera_opencv --address=0.0.0.0 --port=5555 --log-file-prefix=flower --url_prefix=${BASEURL}/flower --logging=info; \
-	fi
 
 nginx-dev:
 	$(COMPOSE) -f docker-compose-dev.yml up -d nginx

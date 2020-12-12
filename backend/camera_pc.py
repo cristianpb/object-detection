@@ -3,7 +3,6 @@ import cv2
 import glob
 import time
 import yaml
-from celery import Celery
 from functools import reduce
 from importlib import import_module
 from datetime import datetime, timedelta
@@ -17,12 +16,6 @@ with open("config.yml", "r") as yamlfile:
 Detector = import_module(f"backend.{config['model']}").Detector
 detector = None
 ct = None
-
-celery = Celery("app")
-celery.conf.update(
-        broker_url='redis://localhost:6379/0',
-        result_backend='redis://localhost:6379/0',
-)
 
 IMAGE_FOLDER = "imgs"
 
@@ -121,7 +114,6 @@ class Predictor(object):
         return img
 
 
-    @celery.task(bind=True)
     def PeriodicCaptureContinous(self):
         interval=config['beat_interval']
         while True:

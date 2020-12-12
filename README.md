@@ -14,8 +14,6 @@ It can use:
 * Motion detection using OpenCV
 * Cascade classifier
 
-A celery task can be used to collect photos at regular intervals.
-
 ## Install
 
 * Make sure to have `git`:

@@ -11,12 +11,14 @@ from importlib import import_module
 from itertools import islice
 from dotenv import load_dotenv
 from datetime import datetime
+from multiprocessing import Process
 from flask import Flask, Response, send_from_directory, request, Blueprint, abort
 from backend.utils import (reduce_year, reduce_year_month, reduce_month, reduce_day, reduce_year, reduce_hour,
         reduce_object, reduce_tracking, img_to_base64)
 
 with open("config.yml", "r") as yamlfile:
     config = yaml.load(yamlfile, Loader=yaml.FullLoader)
+    jobs = dict()
 
 WIDTH = 320
 HEIGHT = 240
@@ -257,28 +259,63 @@ def taskstatus(task_id):
     return json.dumps(response)
 
 
-@blueprint_api.route('/api/task/launch')
-def launch_object_tracking():
-    task = predictor.ObjectTracking.delay()
-    #task = predictor.continous_object_tracking.delay()
-    return json.dumps({"task_id": task.id})
+@blueprint_api.route('/api/task/start')
+def task_launch():
+    #task = predictor.ObjectTracking.delay()
+    ##task = predictor.continous_object_tracking.delay()
+    #return json.dumps({"task_id": task.id})
+    task_name = request.args.get('task', None)
+    if task_name is None:
+        return dict(msg="Task name is missing")
+    if task_name == 'tracking':
+        jobs[task_name] = Process(target=predictor.ObjectTracking)
+        jobs[task_name].start()
+        return dict(
+            is_alive=jobs[task_name].is_alive(),
+            pid=jobs[task_name].pid,
+            name=jobs[task_name].name
+            )
+    elif task_name == 'detection':
+        jobs[task_name] = Process(target=predictor.PeriodicCaptureContinous)
+        jobs[task_name].start()
+        return dict(
+            is_alive=jobs[task_name].is_alive(),
+            pid=jobs[task_name].pid,
+            name=jobs[task_name].name
+            )
+    else:
+        return dict(msg="Don't know the task you want.\
+                Try 'detection' or 'tracking'")
 
-@blueprint_api.route('/api/task/kill/<task_id>')
-def killtask(task_id):
-    response = celery.control.revoke(task_id, terminate=True, wait=True, timeout=10)
-    return json.dumps(response)
+@blueprint_api.route('/api/task/kill')
+def task_kill():
+    task_name = request.args.get('task', None)
+    if task_name is None:
+        return dict(msg="Task name is missing")
+    if task_name not in jobs:
+        return dict(msg="Task doesn't exists")
+    jobs[task_name].terminate()
+    jobs[task_name].join()
+    return dict(
+        is_alive=jobs[task_name].is_alive(),
+        pid=jobs[task_name].pid,
+        name=jobs[task_name].name
+        )
 
-@blueprint_api.route('/api/beat/launch')
-def launch_beat():
-    task = predictor.PeriodicCaptureContinous.delay()
-    return json.dumps({"task_id": task.id})
 
-#@blueprint_api.route('/tracking/read')
-#def read_tracking():
-#    df =pd.read_csv('{}/tracking.csv'.format(IMAGE_FOLDER), header=None, names=['date', 'hour', 'idx', 'coord'])
-#    print(df.head())
-#    print(df.to_dict(orient='records'))
-#    return json.dumps(df.to_dict(orient='records'))
+@blueprint_api.route('/api/task/status')
+def task_status():
+    task_name = request.args.get('task', None)
+    print("Chupelo", task_name)
+    if task_name is None:
+        return dict(msg="Task name is missing")
+    if task_name not in jobs:
+        return dict(msg="Task doesn't exists")
+    return dict(
+        is_alive=jobs[task_name].is_alive(),
+        pid=jobs[task_name].pid,
+        name=jobs[task_name].name
+        )
 
 @blueprint_api.route('/api/config')
 def read_config():

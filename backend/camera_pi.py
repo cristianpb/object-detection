@@ -3,6 +3,7 @@ import io
 import cv2
 import time
 import glob
+import yaml
 import numpy as np
 from celery import Celery
 from functools import reduce
@@ -10,12 +11,13 @@ from datetime import datetime, timedelta
 from importlib import import_module
 from picamera.array import PiRGBArray
 from picamera import PiCamera
-from dotenv import load_dotenv
 from backend.centroidtracker import CentroidTracker
 from backend.base_camera import BaseCamera
 from backend.utils import reduce_tracking
 
-load_dotenv()
+with open("config.yml", "r") as yamlfile:
+    config = yaml.load(yamlfile, Loader=yaml.FullLoader)
+
 Detector = import_module('backend.' + os.environ['DETECTION_MODEL']).Detector
 detector = None
 ct = None
@@ -32,10 +34,17 @@ celery.conf.update(
 
 
 class Camera(BaseCamera):
+
+    def __init__(self, config):
+        if config['source']:
+            self.set_video_source(config['source'])
+        if config['rotation']:
+            self.rotation = config['rotation']
+
     @staticmethod
     def frames():
         with PiCamera() as camera:
-            camera.rotation = int(str(os.environ['CAMERA_ROTATION']))
+            camera.rotation = config['rotation']
             stream = io.BytesIO()
             for _ in camera.capture_continuous(stream, 'jpeg',
                                                use_video_port=True):
@@ -116,13 +125,14 @@ class Predictor(object):
 
     @celery.task(bind=True)
     def PeriodicCaptureContinous(self):
-        interval=int(str(os.environ['BEAT_INTERVAL']))
+        interval=config['beat_interval']
         while True:
             CaptureContinous()
             time.sleep(interval)
 
     @celery.task(bind=True)
     def ObjectTracking(self):
+        interval=config['beat_interval']
         detector = Detector()
         myiter = glob.iglob(os.path.join(IMAGE_FOLDER, '**', '*.jpg'),
                             recursive=True)
@@ -160,7 +170,7 @@ class Predictor(object):
                                 directory, "{}_person_{}_.jpg".format(hour, ids)
                                 )
                         cv2.imwrite(filename_output, img)
-                    time.sleep(0.300)
+                    time.sleep(interval)
 
 
 if __name__ == '__main__':

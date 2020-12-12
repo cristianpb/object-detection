@@ -2,17 +2,19 @@ import os
 import cv2
 import glob
 import time
+import yaml
 from celery import Celery
 from functools import reduce
-from dotenv import load_dotenv
 from importlib import import_module
 from datetime import datetime, timedelta
 from backend.centroidtracker import CentroidTracker
 from backend.base_camera import BaseCamera
 from backend.utils import reduce_tracking
 
-load_dotenv()
-Detector = import_module('backend.' + os.environ['DETECTION_MODEL']).Detector
+with open("config.yml", "r") as yamlfile:
+    config = yaml.load(yamlfile, Loader=yaml.FullLoader)
+
+Detector = import_module(f"backend.{config['model']}").Detector
 detector = None
 ct = None
 
@@ -121,20 +123,21 @@ class Predictor(object):
 
     @celery.task(bind=True)
     def PeriodicCaptureContinous(self):
-        interval=int(str(os.environ['BEAT_INTERVAL']))
+        interval=config['beat_interval']
         while True:
             CaptureContinous()
             time.sleep(interval)
 
-    @celery.task(bind=True)
     def ObjectTracking(self):
+        interval=config['beat_interval']
         global detector
         if detector is None:
             load_detector()
         myiter = glob.iglob(os.path.join(IMAGE_FOLDER, '**', '*.jpg'),
                             recursive=True)
         newdict = reduce(lambda a, b: reduce_tracking(a,b), myiter, dict())
-        startID = max(map(int, newdict.keys()), default=0) + 1
+        #startID = max(map(int, newdict.keys()), default=0) + 1
+        startID = 0
         ct = CentroidTracker(startID=startID)
         camera = cv2.VideoCapture(0)
         if not camera.isOpened():
@@ -161,7 +164,7 @@ class Predictor(object):
                         cv2.circle(img, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
 
                     day = datetime.now().strftime("%Y%m%d")
-                    directory = os.path.join(IMAGE_FOLDER, 'pi', day)
+                    directory = os.path.join(IMAGE_FOLDER, 'webcam', day)
                     if not os.path.exists(directory):
                         os.makedirs(directory)
                     ids = "-".join(list([str(i) for i in objects.keys()]))
@@ -170,7 +173,7 @@ class Predictor(object):
                             directory, "{}_person_{}_.jpg".format(hour, ids)
                             )
                     cv2.imwrite(filename_output, img)
-                #time.sleep(0.100)
+                time.sleep(interval)
         except KeyboardInterrupt:
             print('interrupted!')
             camera.release()

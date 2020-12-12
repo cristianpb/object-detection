@@ -24,4 +24,7 @@ device: pc
 #   ssd_trt_detection (only with gpu device)
 model: ssd_detection
 
+# Capture continous interval
+beat_interval: 1
+
 # vim:filetype=yaml

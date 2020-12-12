@@ -82,7 +82,7 @@ def draw_boxed_text(img, text, topleft, color):
     return img
 
 
-def reduce_month(accu, item):
+def reduce_year_month(accu, item):
     if folder_regex.match(item) is None:
         return accu
     year = item.split('/')[2][:4]
@@ -94,6 +94,17 @@ def reduce_month(accu, item):
     else:
         accu[year][month] = 1
     return accu
+
+def reduce_month(accu, item):
+    if folder_regex.match(item) is None:
+        return accu
+    month = item.split('/')[2][4:6]
+    if month in accu:
+        accu[month] +=1
+    else:
+        accu[month] = 1
+    return accu
+
 
 def reduce_year(accu, item):
     if folder_regex.match(item) is None:

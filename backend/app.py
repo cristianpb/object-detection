@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import re
 import glob
 import cv2
 import json
@@ -11,7 +12,7 @@ from itertools import islice
 from dotenv import load_dotenv
 from datetime import datetime
 from flask import Flask, Response, send_from_directory, request, Blueprint, abort
-from backend.utils import (reduce_month, reduce_year, reduce_hour,
+from backend.utils import (reduce_year, reduce_year_month, reduce_month, reduce_year, reduce_hour,
         reduce_object, reduce_tracking, img_to_base64)
 
 with open("config.yml", "r") as yamlfile:
@@ -25,6 +26,8 @@ if os.getenv('PORT'):
     PORT = int(str(os.getenv('PORT')))
 else:
     PORT=5000
+
+folder_regex = re.compile('imgs/webcam|imgs/pi')
 
 Camera = import_module('backend.camera_{}'.format(config['device'])).Camera
 cameras = dict()
@@ -96,58 +99,87 @@ def delete_image():
         return abort(404)
 
 def get_data(item):
-    if 'pi' in item:
+    if folder_regex.match(item):
         year = item.split('/')[2][:4]
         month = item.split('/')[2][4:6]
         day = item.split('/')[2][6:8]
         hour = item.split('/')[3][:2]
         minutes = item.split('/')[3][2:4]
+        seconds = item.split('/')[3][4:6]
         return dict(
                 path=item, year=year, month=month, day=day,
-                hour=hour, minutes=minutes
+                hour=hour, minutes=minutes, seconds=seconds
                 )
     else:
         return dict(path=item)
 
+def get_range(units, digit_number):
+    dec = []
+    for digit in range(digit_number):
+        dec.append(set())
+    for digit_candidate in str(units).split(","):
+        if len(digit_candidate) == digit_number:
+            for digit in range(digit_number):
+                dec[digit].add(digit_candidate[digit])
+        else:
+            for digit in range(digit_number):
+                if digit == (digit_number - 1):
+                    dec[digit].add(digit_candidate)
+                else:
+                    dec[digit].add("0")
+    return "".join(["[" + "".join(x) + "]" for x in dec])
 
 @blueprint_api.route('/api/images')
 def api_images():
     page = int(request.args.get('page', 0))
     page_size = int(request.args.get('page_size', 16))
     mydate = request.args.get('date', None)
-    myyear = request.args.get('year', "????")
-    mymonth = request.args.get('month', "??")
-    myday = request.args.get('day', "??")
-    myhour = request.args.get('hour', "??")
+    myyear = request.args.get('years', "????")
+    mymonth = request.args.get('months', "??")
+    myday = request.args.get('days', "??")
+    myhour = request.args.get('hours', "??")
     myminutes = request.args.get('minutes', "??")
     mydetection = request.args.get('detected_object', "*")
     if mydate is not None:
-        mydate = (datetime
+        date = (datetime
                   .strptime(mydate, "%d/%m/%Y")
                   .strftime("%Y%m%d")
                   )
-        myiter = glob.iglob(os.path.join(IMAGE_FOLDER, '**', mydate, '*.jpg'),
-                            recursive=True)
-    elif (myyear != "????" or
-          mymonth != "??" or
-          myday != "??" or
-          myhour != "??" or
-          myminutes != "??" or
-          mydetection != "*"):
-        mypath = os.path.join(
-                              IMAGE_FOLDER, '**',
-                              f'{myyear}{mymonth}{myday}',
-                              f'{myhour.zfill(2)}{myminutes}??*{mydetection}*.jpg')
-        myiter = glob.iglob(mypath, recursive=True)
     else:
-        myiter = glob.iglob(os.path.join(IMAGE_FOLDER, '**', '*.jpg'),
-                            recursive=True)
+        if myyear != "????":
+            if myyear:
+                myyear = get_range(myyear, 4)
+            else:
+                myyear = "????"
 
+        if mymonth != "??":
+            if mymonth:
+                mymonth = get_range(mymonth, 2)
+            else:
+                mymonth = "??"
+
+        if myday != "??":
+            myday = get_range(myday, 2)
+
+        date = f"{myyear}{mymonth}{myday}"
+
+    if myhour != "??":
+        myhour = get_range(myhour, 2)
+
+    if myminutes != "??":
+        myminutes = get_range(myminutes, 2)
+
+    mypath = os.path.join(
+                          IMAGE_FOLDER,
+                          '*',
+                          f'{date}',
+                          f'{myhour.zfill(2)}{myminutes}??*{mydetection}*.jpg').replace('***', '*')
+    myiter = glob.iglob(mypath, recursive=True)
     start = page * page_size
     end = (page + 1) * page_size
     result = [get_data(i) for i in islice(myiter, start, end)]
     print('->> Start', start, 'end', end, 'len', len(result))
-    return json.dumps(result)
+    return dict(page=page, page_size=page_size, images=result)
 
 
 @blueprint_api.route('/api/single_image')
@@ -170,17 +202,18 @@ def single_image():
         return dict(msg='no image')
 
 myconditions = dict(
-        month=reduce_month,
-        year=reduce_year,
-        hour=reduce_hour,
-        detected_object=reduce_object,
-        tracking_object=reduce_tracking,
+        years=reduce_year,
+        months=reduce_month,
+        year_month=reduce_year_month,
+        hours=reduce_hour,
+        detected_objects=reduce_object,
+        tracking_objects=reduce_tracking,
         )
 
 
 @blueprint_api.route('/api/list_files')
 def list_folder():
-    condition = request.args.get('condition', 'year')
+    condition = request.args.get('condition', 'years')
     myiter = glob.iglob(os.path.join(IMAGE_FOLDER, '**', '*.jpg'),
                         recursive=True)
     newdict = reduce(lambda a, b: myconditions[condition](a,b), myiter, dict())

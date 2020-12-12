@@ -23,3 +23,5 @@ device: pc
 #   motion
 #   ssd_trt_detection (only with gpu device)
 model: ssd_detection
+
+# vim:filetype=yaml

@@ -105,6 +105,16 @@ def reduce_month(accu, item):
         accu[month] = 1
     return accu
 
+def reduce_day(accu, item):
+    if folder_regex.match(item) is None:
+        return accu
+    day = item.split('/')[2][6:8]
+    if day in accu:
+        accu[day] +=1
+    else:
+        accu[day] = 1
+    return accu
+
 
 def reduce_year(accu, item):
     if folder_regex.match(item) is None:

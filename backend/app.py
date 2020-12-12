@@ -12,7 +12,7 @@ from itertools import islice
 from dotenv import load_dotenv
 from datetime import datetime
 from flask import Flask, Response, send_from_directory, request, Blueprint, abort
-from backend.utils import (reduce_year, reduce_year_month, reduce_month, reduce_year, reduce_hour,
+from backend.utils import (reduce_year, reduce_year_month, reduce_month, reduce_day, reduce_year, reduce_hour,
         reduce_object, reduce_tracking, img_to_base64)
 
 with open("config.yml", "r") as yamlfile:
@@ -159,15 +159,24 @@ def api_images():
                 mymonth = "??"
 
         if myday != "??":
-            myday = get_range(myday, 2)
+            if myday:
+                myday = get_range(myday, 2)
+            else:
+                myday = "??"
 
         date = f"{myyear}{mymonth}{myday}"
 
     if myhour != "??":
-        myhour = get_range(myhour, 2)
+        if myhour:
+            myhour = get_range(myhour, 2)
+        else:
+            myhour = "??"
 
     if myminutes != "??":
-        myminutes = get_range(myminutes, 2)
+        if myminutes:
+            myminutes = get_range(myminutes, 2)
+        else:
+            myminutes = "??"
 
     mypath = os.path.join(
                           IMAGE_FOLDER,
@@ -204,6 +213,7 @@ def single_image():
 myconditions = dict(
         years=reduce_year,
         months=reduce_month,
+        days=reduce_day,
         year_month=reduce_year_month,
         hours=reduce_hour,
         detected_objects=reduce_object,

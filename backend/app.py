@@ -37,10 +37,6 @@ cameras = dict()
 for camera_config in config['cameras']:
     cameras[camera_config['name']] = Camera(camera_config)
 
-if len(cameras) > 0:
-    Predictor = import_module('backend.camera_' + config['device']).Predictor
-    predictor = Predictor()
-
 if os.getenv('BASEURL') and os.getenv('BASEURL') is not None:
     BASEURL=os.getenv('BASEURL').replace('\\', '')
 else:
@@ -201,9 +197,9 @@ def single_image():
     if camera_name:
         frame = cameras[camera_name].get_frame()
     if detection == 'true':
-        frame = predictor.prediction(frame, conf_th=0.3, conf_class=[])
+        frame = cameras[camera_name].prediction(frame, conf_th=0.3, conf_class=[])
     elif tracking == 'true':
-        frame = predictor.object_track(frame, conf_th=0.5, conf_class=[1])
+        frame = cameras[camera_name].object_track(frame, conf_th=0.5, conf_class=[1])
     if frame is not None:
         return json.dumps(dict(img=img_to_base64(frame),
                           width=WIDTH,
@@ -236,38 +232,16 @@ def list_folder():
     # return json.dumps({k: v for k, v in sorted(newdict.items(), key=lambda item: item[1], reverse=True)})
     return newdict
 
-@blueprint_api.route('/api/task/status/<task_id>')
-def taskstatus(task_id):
-    #task = ObjectTracking.AsyncResult(task_id)
-    task = predictor.continous_object_tracking.AsyncResult(task_id)
-    if task.state == 'PENDING':
-        response = {
-            'state': task.state,
-            'object_id': 0,
-        }
-    elif task.state != 'FAILURE':
-        response = {
-            'state': task.state,
-            'object_id': task.info.get('object_id', 0),
-        }
-    else:
-        response = {
-            'state': task.state,
-            'object_id': task.info.get('object_id', 0),
-        }
-    return json.dumps(response)
-
-
 @blueprint_api.route('/api/task/start')
 def task_launch():
-    #task = predictor.ObjectTracking.delay()
-    ##task = predictor.continous_object_tracking.delay()
-    #return json.dumps({"task_id": task.id})
+    camera_name = request.args.get('camera', None)
     task_name = request.args.get('task', None)
+    if camera_name is None:
+        return dict(msg="Camera name is missing")
     if task_name is None:
         return dict(msg="Task name is missing")
     if task_name == 'tracking':
-        jobs[task_name] = Process(target=predictor.ObjectTracking)
+        jobs[task_name] = Process(target=cameras[camera_name].ObjectTracking)
         jobs[task_name].start()
         return dict(
             is_alive=jobs[task_name].is_alive(),
@@ -275,7 +249,7 @@ def task_launch():
             name=jobs[task_name].name
             )
     elif task_name == 'detection':
-        jobs[task_name] = Process(target=predictor.PeriodicCaptureContinous)
+        jobs[task_name] = Process(target=cameras[camera_name].PeriodicCaptureContinous)
         jobs[task_name].start()
         return dict(
             is_alive=jobs[task_name].is_alive(),
@@ -286,7 +260,7 @@ def task_launch():
         return dict(msg="Don't know the task you want.\
                 Try 'detection' or 'tracking'")
 
-@blueprint_api.route('/api/task/kill')
+@blueprint_api.route('/api/task/stop')
 def task_kill():
     task_name = request.args.get('task', None)
     if task_name is None:

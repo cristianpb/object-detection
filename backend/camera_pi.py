@@ -28,11 +28,11 @@ IMAGE_FOLDER = "./imgs"
 
 class Camera(BaseCamera):
 
-    def __init__(self, config):
-        if config['source']:
-            self.set_video_source(config['source'])
-        if config['rotation']:
-            self.rotation = config['rotation']
+    def __init__(self, camera_config):
+        if camera_config['source']:
+            self.set_video_source(camera_config['source'])
+        if camera_config['rotation']:
+            self.rotation = camera_config['rotation']
 
     @staticmethod
     def frames():

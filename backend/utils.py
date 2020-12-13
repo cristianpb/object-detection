@@ -13,8 +13,12 @@ TEXT_SCALE = 1.0
 TEXT_THICKNESS = 1
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
-if os.getenv('DEBUG'):
+if os.getenv('LOG_LEVEL') == 'DEBUG':
     level = logging.DEBUG
+elif os.getenv('LOG_LEVEL') == 'INFO':
+    level = logging.INFO
+elif os.getenv('LOG_LEVEL') == 'ERROR':
+    level = logging.ERROR
 else:
     level = logging.ERROR
 logging.basicConfig(

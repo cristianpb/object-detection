@@ -13,8 +13,9 @@ from dotenv import load_dotenv
 from datetime import datetime
 from multiprocessing import Process
 from flask import Flask, Response, send_from_directory, request, Blueprint, abort
-from backend.utils import (reduce_year, reduce_year_month, reduce_month, reduce_day, reduce_year, reduce_hour,
-        reduce_object, reduce_tracking, img_to_base64)
+from backend.utils import (reduce_year, reduce_year_month, reduce_month,
+        reduce_day, reduce_year, reduce_hour, reduce_object, reduce_tracking,
+        img_to_base64)
 
 with open("config.yml", "r") as yamlfile:
     config = yaml.load(yamlfile, Loader=yaml.FullLoader)
@@ -243,18 +244,23 @@ def task_launch():
     if task_name == 'tracking':
         jobs[task_name] = Process(target=cameras[camera_name].ObjectTracking)
         jobs[task_name].start()
+        jobs[task_name].date = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
         return dict(
             is_alive=jobs[task_name].is_alive(),
             pid=jobs[task_name].pid,
-            name=jobs[task_name].name
+            name=jobs[task_name].name,
+            date=jobs[task_name].date
             )
     elif task_name == 'detection':
+        print("hello", cameras[camera_name].camera)
         jobs[task_name] = Process(target=cameras[camera_name].PeriodicCaptureContinous)
         jobs[task_name].start()
+        jobs[task_name].date = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
         return dict(
             is_alive=jobs[task_name].is_alive(),
             pid=jobs[task_name].pid,
-            name=jobs[task_name].name
+            name=jobs[task_name].name,
+            date=jobs[task_name].date
             )
     else:
         return dict(msg="Don't know the task you want.\
@@ -272,14 +278,15 @@ def task_kill():
     return dict(
         is_alive=jobs[task_name].is_alive(),
         pid=jobs[task_name].pid,
-        name=jobs[task_name].name
+        name=jobs[task_name].name,
+        start=jobs[task_name].date,
+        end=datetime.today().strftime('%Y-%m-%d %H:%M:%S')
         )
 
 
 @blueprint_api.route('/api/task/status')
 def task_status():
     task_name = request.args.get('task', None)
-    print("Chupelo", task_name)
     if task_name is None:
         return dict(msg="Task name is missing")
     if task_name not in jobs:
@@ -287,7 +294,8 @@ def task_status():
     return dict(
         is_alive=jobs[task_name].is_alive(),
         pid=jobs[task_name].pid,
-        name=jobs[task_name].name
+        name=jobs[task_name].name,
+        date=jobs[task_name].date
         )
 
 @blueprint_api.route('/api/config')

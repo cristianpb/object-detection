@@ -20,6 +20,7 @@ class Camera(BaseCamera):
     video_source = 0
     rotation = None
     detector = None
+    camera = None
     ct = None
 
     def __init__(self, camera_config):
@@ -32,13 +33,11 @@ class Camera(BaseCamera):
         self.video_source = source
 
     def frames(self):
-        camera = cv2.VideoCapture(self.video_source)
-        if not camera.isOpened():
-            raise RuntimeError('Could not start camera.')
-
+        if self.camera is None or not self.camera.isOpened():
+            self.load_camera()
         while True:
             # read current frame
-            _, img = camera.read()
+            _, img = self.camera.read()
 
             if self.rotation:
                 if self.rotation == 90:
@@ -49,18 +48,24 @@ class Camera(BaseCamera):
                     img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
             yield img
 
+    def release(self):
+        self.camera.release()
 
-    def load_detector(self):
+    def load_detector(self, startID=0):
         Detector = import_module(f"backend.{config['model']}").Detector
         self.detector = Detector()
-        self.ct = CentroidTracker(maxDisappeared=50)
+        self.ct = CentroidTracker(maxDisappeared=50, startID=startID)
+
+    def load_camera(self):
+        print("loading camera", self.camera)
+        self.camera = cv2.VideoCapture(self.video_source)
+        if not self.camera.isOpened():
+            raise RuntimeError('Could not start camera.')
 
     def CaptureContinous(self):
         if self.detector is None:
             self.load_detector()
-        cap = cv2.VideoCapture(0)
-        _, image = cap.read()
-        cap.release()
+        image = self.get_frame()
         output = self.detector.prediction(image)
         df = self.detector.filter_prediction(output, image)
         if len(df) > 0:
@@ -113,30 +118,25 @@ class Camera(BaseCamera):
 
     def ObjectTracking(self):
         interval=config['beat_interval']
+        if False:
+            # search startID
+            myiter = glob.iglob(os.path.join(IMAGE_FOLDER, '**', '*.jpg'),
+                                recursive=True)
+            newdict = reduce(lambda a, b: reduce_tracking(a,b), myiter, dict())
+            startID = max(map(int, newdict.keys()), default=0) + 1
         if self.detector is None:
             self.load_detector()
-        myiter = glob.iglob(os.path.join(IMAGE_FOLDER, '**', '*.jpg'),
-                            recursive=True)
-        newdict = reduce(lambda a, b: reduce_tracking(a,b), myiter, dict())
-        #startID = max(map(int, newdict.keys()), default=0) + 1
-        startID = 0
-        ct = CentroidTracker(startID=startID)
-        camera = cv2.VideoCapture(0)
-        if not camera.isOpened():
-            raise RuntimeError('Could not start camera.')
+        if self.camera is None:
+            self.load_camera()
 
         try:
             while True:
-                _, img = camera.read()
+                img = self.get_frame()
                 output = self.detector.prediction(img)
                 df = self.detector.filter_prediction(output, img)
                 img = self.detector.draw_boxes(img, df)
                 boxes = df[['x1', 'y1', 'x2', 'y2']].values
                 previous_object_ID = self.ct.nextObjectID
-                #self.update_state(state='PROGRESS',
-                #        meta={
-                #            'object_id': previous_object_ID,
-                #            })
                 objects = self.ct.update(boxes)
                 if len(boxes) > 0 and (df['class_name'].str.contains('person').any()) and previous_object_ID in list(objects.keys()):
                     for (objectID, centroid) in objects.items():
@@ -170,5 +170,6 @@ class Camera(BaseCamera):
 
 
 if __name__ == '__main__':
-    camera = Camera()
+    camera = Camera(config['cameras'][0])
     camera.CaptureContinous()
+    #camera.ObjectTracking()

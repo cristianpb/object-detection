@@ -86,6 +86,11 @@ class BaseCamera(object):
         """"Generator that returns frames from the camera."""
         raise RuntimeError('Must be implemented by subclasses.')
 
+    @staticmethod
+    def release():
+        """"Release camera instance."""
+        raise RuntimeError('Must be implemented by subclasses.')
+
     def _thread(self):
         """Camera background thread."""
         print('Starting camera thread.')
@@ -99,6 +104,7 @@ class BaseCamera(object):
             # the last 10 seconds then stop the thread
             if time.time() - self.last_access > 10:
                 frames_iterator.close()
+                self.release()
                 print('Stopping camera thread due to inactivity.')
                 break
         self.thread = None

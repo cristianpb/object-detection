@@ -1,7 +1,6 @@
 import cv2
 import numpy as np  # type: ignore
 import pandas as pd  # type: ignore
-import imutils
 from backend.utils import timeit
 
 DELTA_THRESH = 10
@@ -31,7 +30,11 @@ class Detector():
         cnts = cv2.findContours(
                 thresh.copy(), cv2.RETR_EXTERNAL,
                 cv2.CHAIN_APPROX_SIMPLE)
-        cnts = imutils.grab_contours(cnts)
+        # select contours depending on opencv version
+        if len(cnts) == 2:
+            cnts = cnts[0]
+        elif len(cnts) == 3:
+            cnts = cnts[1]
         self.avg = image.copy().astype(float)
         return cnts
 

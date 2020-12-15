@@ -73,7 +73,7 @@ up: .env config.yml dist build
 		DEBUG="" venv/bin/python3 backend/app.py; \
 	fi
 
-heroku: dist models/ssd_mobilenet/frozen_inference_graph.pb
+heroku: dist models/ssd_mobilenet/frozen_inference_graph.pb config.yml
 	DEBUG="" python3 backend/app.py
 
 nginx-dev:

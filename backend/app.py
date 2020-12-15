@@ -241,26 +241,28 @@ def task_launch():
         return dict(msg="Camera name is missing")
     if task_name is None:
         return dict(msg="Task name is missing")
+    job_name = f"{camera_name}_{task_name}"
+    if job_name in jobs and jobs[job_name].is_alive():
+        return dict(msg="Task already running")
     if task_name == 'tracking':
-        jobs[task_name] = Process(target=cameras[camera_name].ObjectTracking)
-        jobs[task_name].start()
-        jobs[task_name].date = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
+        jobs[job_name] = Process(target=cameras[camera_name].ObjectTracking)
+        jobs[job_name].start()
+        jobs[job_name].date = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
         return dict(
-            is_alive=jobs[task_name].is_alive(),
-            pid=jobs[task_name].pid,
-            name=jobs[task_name].name,
-            date=jobs[task_name].date
+            running=jobs[job_name].is_alive(),
+            pid=jobs[job_name].pid,
+            name=jobs[job_name].name,
+            date=jobs[job_name].date
             )
     elif task_name == 'detection':
-        print("hello", cameras[camera_name].camera)
-        jobs[task_name] = Process(target=cameras[camera_name].PeriodicCaptureContinous)
-        jobs[task_name].start()
-        jobs[task_name].date = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
+        jobs[job_name] = Process(target=cameras[camera_name].PeriodicCaptureContinous)
+        jobs[job_name].start()
+        jobs[job_name].date = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
         return dict(
-            is_alive=jobs[task_name].is_alive(),
-            pid=jobs[task_name].pid,
-            name=jobs[task_name].name,
-            date=jobs[task_name].date
+            running=jobs[job_name].is_alive(),
+            pid=jobs[job_name].pid,
+            name=jobs[job_name].name,
+            date=jobs[job_name].date
             )
     else:
         return dict(msg="Don't know the task you want.\
@@ -268,35 +270,66 @@ def task_launch():
 
 @blueprint_api.route('/api/task/stop')
 def task_kill():
+    camera_name = request.args.get('camera', None)
     task_name = request.args.get('task', None)
+    if camera_name is None:
+        return dict(msg="Camera name is missing")
     if task_name is None:
         return dict(msg="Task name is missing")
-    if task_name not in jobs:
+    job_name = f"{camera_name}_{task_name}"
+    if job_name not in jobs:
         return dict(msg="Task doesn't exists")
-    jobs[task_name].terminate()
-    jobs[task_name].join()
+    jobs[job_name].terminate()
+    jobs[job_name].join()
+    jobs[job_name].end = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
     return dict(
-        is_alive=jobs[task_name].is_alive(),
-        pid=jobs[task_name].pid,
-        name=jobs[task_name].name,
-        start=jobs[task_name].date,
-        end=datetime.today().strftime('%Y-%m-%d %H:%M:%S')
+        running=jobs[job_name].is_alive(),
+        pid=jobs[job_name].pid,
+        name=jobs[job_name].name,
+        start=jobs[job_name].date,
+        end=jobs[job_name].end
         )
 
 
 @blueprint_api.route('/api/task/status')
 def task_status():
+    camera_name = request.args.get('camera', None)
     task_name = request.args.get('task', None)
     if task_name is None:
         return dict(msg="Task name is missing")
-    if task_name not in jobs:
+    job_name = f"{camera_name}_{task_name}"
+    if job_name not in jobs:
         return dict(msg="Task doesn't exists")
-    return dict(
-        is_alive=jobs[task_name].is_alive(),
-        pid=jobs[task_name].pid,
-        name=jobs[task_name].name,
-        date=jobs[task_name].date
-        )
+    if jobs[job_name].is_alive():
+        return dict(
+            running=jobs[job_name].is_alive(),
+            pid=jobs[job_name].pid,
+            name=jobs[job_name].name,
+            start=jobs[job_name].date
+            )
+    else:
+        return dict(
+            running=jobs[job_name].is_alive(),
+            pid=jobs[job_name].pid,
+            name=jobs[job_name].name,
+            start=jobs[job_name].date,
+            end=jobs[job_name].end
+            )
+
+@blueprint_api.route('/api/task/jobs')
+def task_jobs():
+    return dict(jobs=[{
+        'name': job_name.split("_")[1],
+        'camera': job_name.split("_")[0],
+        'running': job.is_alive(),
+        'start': job.date
+        } if job.is_alive() else {
+        'name': job_name.split("_")[1],
+        'camera': job_name.split("_")[0],
+        'running': job.is_alive(),
+        'start': job.date,
+        'end': job.end
+        } for job_name,job in jobs.items()])
 
 @blueprint_api.route('/api/config')
 def read_config():

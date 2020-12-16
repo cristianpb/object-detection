@@ -13,11 +13,6 @@ cameras:
     # 270
     rotation: 0
 
-# pc
-# pi
-# jetson
-device: pc
-
 # Possible models:
 #   ssd_detection 
 #   yolo_detection

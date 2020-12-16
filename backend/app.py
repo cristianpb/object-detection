@@ -35,7 +35,7 @@ folder_regex = re.compile('imgs/webcam|imgs/pi')
 
 cameras = dict()
 for camera_config in config['cameras']:
-    cameras[camera_config['name']] = Camera(config['device'], camera_config)
+    cameras[camera_config['name']] = Camera(camera_config)
 
 if os.getenv('BASEURL') and os.getenv('BASEURL') is not None:
     BASEURL=os.getenv('BASEURL').replace('\\', '')

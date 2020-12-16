@@ -25,8 +25,7 @@ class Camera(BaseCamera):
     camera = None
     ct = None
 
-    def __init__(self, device, camera_config):
-        self.device = device
+    def __init__(self, camera_config):
         if 'source' in camera_config:
             self.video_source = camera_config['source']
         if 'rotation' in camera_config:

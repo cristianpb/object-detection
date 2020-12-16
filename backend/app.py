@@ -334,6 +334,12 @@ def task_jobs():
 def read_config():
     return config
 
+@blueprint_api.route('/api/config/write')
+def write_config():
+    with open('data.yml', 'w') as outfile:
+        yaml.dump(config, outfile, default_flow_style=False)
+    return dict(msg="ok")
+
 app.register_blueprint(blueprint_api)
 
 if __name__ == '__main__':

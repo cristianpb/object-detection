@@ -56,25 +56,25 @@ build: venv models/ssd_mobilenet/frozen_inference_graph.pb
 dev: .env config.yml dist build
 	@echo "Debug mode $(CAMERA) $(PORT)"
 	@if [ "${CAMERA}" = 'pi' ]; then \
-		DEBUG=1 python3 backend/app.py; \
+		DEBUG=1 FLASK_APP=backend/app.py flask run; \
 	elif [ "${CAMERA}" = 'jetson' ]; then \
-		DEBUG=1 python3 backend/app.py; \
+		DEBUG=1 FLASK_APP=backend/app.py flask run; \
 	else \
-		DEBUG=1 venv/bin/python3 backend/app.py; \
+		DEBUG=1 FLASK_APP=backend/app.py venv/bin/flask run; \
 	fi
 
 up: .env config.yml dist build
 	@echo "Up mode $(CAMERA) $(PORT)"
 	@if [ "${CAMERA}" = 'pi' ]; then \
-		DEBUG="" python3 backend/app.py; \
+		DEBUG="" FLASK_APP=backend/app.py flask run; \
 	elif [ "${CAMERA}" = 'jetson' ]; then \
-		DEBUG="" python3 backend/app.py; \
+		DEBUG="" FLASK_APP=backend/app.py flask run; \
 	else \
-		DEBUG="" venv/bin/python3 backend/app.py; \
+		DEBUG="" FLASK_APP=backend/app.py venv/bin/flask run; \
 	fi
 
 heroku: dist models/ssd_mobilenet/frozen_inference_graph.pb config.yml
-	DEBUG="" python3 backend/app.py
+	DEBUG="" FLASK_APP=backend/app.py flask run
 
 nginx-dev:
 	$(COMPOSE) -f docker-compose-dev.yml up -d nginx

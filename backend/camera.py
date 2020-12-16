@@ -1,14 +1,16 @@
 import os
+import io
 import cv2
 import glob
 import time
 import yaml
+import numpy as np
 from functools import reduce
 from importlib import import_module
 from datetime import datetime, timedelta
-from backend.centroidtracker import CentroidTracker
-from backend.base_camera import BaseCamera
-from backend.utils import reduce_tracking
+from .centroidtracker import CentroidTracker
+from .base_camera import BaseCamera
+from .utils import reduce_tracking
 
 with open("config.yml", "r") as yamlfile:
     config = yaml.load(yamlfile, Loader=yaml.FullLoader)
@@ -23,16 +25,20 @@ class Camera(BaseCamera):
     camera = None
     ct = None
 
-    def __init__(self, camera_config):
-        if camera_config['source']:
-            self.set_video_source(camera_config['source'])
-        if camera_config['rotation']:
+    def __init__(self, device, camera_config):
+        self.device = device
+        if 'source' in camera_config:
+            self.video_source = camera_config['source']
+        if 'rotation' in camera_config:
             self.rotation = camera_config['rotation']
+        if camera_config['source'] == 'picamera':
+            self.frames = self.frames_pi
+        elif camera_config['source'] == 'jetson':
+            self.frames = self.frames_jetson
+        else:
+            self.frames = self.frames_pc
 
-    def set_video_source(self, source):
-        self.video_source = source
-
-    def frames(self):
+    def frames_pc(self):
         if self.camera is None or not self.camera.isOpened():
             self.load_camera()
         while True:
@@ -48,8 +54,32 @@ class Camera(BaseCamera):
                     img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
             yield img
 
+    def frames_pi(self):
+        from picamera.array import PiRGBArray
+        from picamera import PiCamera
+        self.PiCamera = PiCamera
+        self.PiRGBArray = PiRGBArray
+        self.camera = PiCamera()
+        self.camera.rotation = self.rotation
+        stream = io.BytesIO()
+        for _ in self.camera.capture_continuous(stream, 'jpeg',
+                                           use_video_port=True):
+            # return current frame
+            stream.seek(0)
+            _stream = stream.getvalue()
+            data = np.fromstring(_stream, dtype=np.uint8)
+            img = cv2.imdecode(data, 1)
+            yield img
+
+            # reset stream for next frame
+            stream.seek(0)
+            stream.truncate()
+
     def release(self):
-        self.camera.release()
+        if self.video_source == 'picamera':
+            self.camera.close()
+        else:
+            self.camera.release()
 
     def load_detector(self, startID=0):
         Detector = import_module(f"backend.{config['model']}").Detector
@@ -57,7 +87,6 @@ class Camera(BaseCamera):
         self.ct = CentroidTracker(maxDisappeared=50, startID=startID)
 
     def load_camera(self):
-        print("loading camera", self.camera)
         self.camera = cv2.VideoCapture(self.video_source)
         if not self.camera.isOpened():
             raise RuntimeError('Could not start camera.')
@@ -65,7 +94,18 @@ class Camera(BaseCamera):
     def CaptureContinous(self):
         if self.detector is None:
             self.load_detector()
-        image = self.get_frame()
+        if self.video_source == 'picamera':
+            WIDTH = 640
+            HEIGHT = 480
+            with self.PiCamera() as camera:
+                camera.resolution = (1280, 960)  # twice height and widht
+                camera.rotation = self.rotation
+                camera.framerate = 10
+                with self.PiRGBArray(camera, size=(WIDTH, HEIGHT)) as output:
+                    camera.capture(output, 'bgr', resize=(WIDTH, HEIGHT))
+                    image = output.array
+        else:
+            image = self.get_frame()
         output = self.detector.prediction(image)
         df = self.detector.filter_prediction(output, image)
         if len(df) > 0:
@@ -126,12 +166,21 @@ class Camera(BaseCamera):
             startID = max(map(int, newdict.keys()), default=0) + 1
         if self.detector is None:
             self.load_detector()
-        if self.camera is None:
-            self.load_camera()
 
         try:
             while True:
-                img = self.get_frame()
+                if self.video_source == 'picamera':
+                    WIDTH = 640
+                    HEIGHT = 480
+                    with self.PiCamera() as camera:
+                        camera.resolution = (1280, 960)  # twice height and widht
+                        camera.rotation = self.rotation
+                        camera.framerate = 10
+                        with self.PiRGBArray(camera, size=(WIDTH, HEIGHT)) as output:
+                            camera.capture(output, 'bgr', resize=(WIDTH, HEIGHT))
+                            img = output.array
+                else:
+                    img = self.get_frame()
                 output = self.detector.prediction(img)
                 df = self.detector.filter_prediction(output, img)
                 img = self.detector.draw_boxes(img, df)

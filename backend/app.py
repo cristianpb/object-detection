@@ -13,9 +13,10 @@ from dotenv import load_dotenv
 from datetime import datetime
 from multiprocessing import Process
 from flask import Flask, Response, send_from_directory, request, Blueprint, abort
-from backend.utils import (reduce_year, reduce_year_month, reduce_month,
+from .utils import (reduce_year, reduce_year_month, reduce_month,
         reduce_day, reduce_year, reduce_hour, reduce_object, reduce_tracking,
         img_to_base64)
+from .camera import Camera
 
 with open("config.yml", "r") as yamlfile:
     config = yaml.load(yamlfile, Loader=yaml.FullLoader)
@@ -32,11 +33,9 @@ else:
 
 folder_regex = re.compile('imgs/webcam|imgs/pi')
 
-Camera = import_module('backend.camera_{}'.format(config['device'])).Camera
 cameras = dict()
-
 for camera_config in config['cameras']:
-    cameras[camera_config['name']] = Camera(camera_config)
+    cameras[camera_config['name']] = Camera(config['device'], camera_config)
 
 if os.getenv('BASEURL') and os.getenv('BASEURL') is not None:
     BASEURL=os.getenv('BASEURL').replace('\\', '')

@@ -3,6 +3,8 @@
 cameras:
   - name: webcam
     # usb: 0
+    # picamera: picamera
+    # jetson: jetson
     # video: 'video.mp4'
     # rtsp: 'rtsp://webcamip:8554/test'
     source: 0

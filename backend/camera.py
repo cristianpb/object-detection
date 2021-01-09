@@ -10,7 +10,7 @@ from importlib import import_module
 from datetime import datetime, timedelta
 from .centroidtracker import CentroidTracker
 from .base_camera import BaseCamera
-from .utils import reduce_tracking
+from .utils import reduce_tracking, gstreamer_pipeline
 
 with open("config.yml", "r") as yamlfile:
     config = yaml.load(yamlfile, Loader=yaml.FullLoader)
@@ -73,6 +73,29 @@ class Camera(BaseCamera):
             # reset stream for next frame
             stream.seek(0)
             stream.truncate()
+
+    def frames_jetson(self):
+        if self.camera is None or not self.camera.isOpened():
+            if self.rotation:
+                if self.rotation == 90:
+                    flip_method = 1
+                if self.rotation == 180:
+                    flip_method = 2
+                if self.rotation == 270:
+                    flip_method = 3
+                else:
+                    flip_method = 0
+            else:
+                flip_method = 0
+            self.camera = cv2.VideoCapture(gstreamer_pipeline(flip_method=flip_method), cv2.CAP_GSTREAMER)
+            if not self.camera.isOpened():
+                raise RuntimeError('Could not start camera.')
+        while True:
+            # read current frame
+            _, img = self.camera.read()
+
+            yield img
+
 
     def release(self):
         if self.video_source == 'picamera':

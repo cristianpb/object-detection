@@ -26,7 +26,7 @@ def _preprocess_trt(img, shape=(300, 300)):
 
 
 class Detector():
-    """Class ssd"""
+    """Class ssd version gpu"""
 
     def _load_plugins(self):
         ctypes.CDLL("models/ssd_mobilenet/libflattenconcat.so")
@@ -116,16 +116,15 @@ class Detector():
             clss.append(cls)
         return boxes, confs, clss
 
-    def draw_boxes(self, image, boxes, confs, clss):
-        for (box, cf, cls) in zip(boxes, confs, clss):
-            x_min, y_min, x_max, y_max = box[0], box[1], box[2], box[3]
-            color = self.colors[cls]
+    def draw_boxes(self, image, df):
+        for idx, box in df.iterrows():
+            x_min, y_min, x_max, y_max = box['x1'], box['y1'], box['x2'], box['y2']
+            color = self.colors[int(box['class_id'])]
             cv2.rectangle(image, (x_min, y_min), (x_max, y_max), color, 2)
             txt_loc = (max(x_min+2, 0), max(y_min+2, 0))
-            txt = '{} {:.2f}'.format(CLASS_NAMES[str(cls)], cf)
+            txt = box['label']
             image = draw_boxed_text(image, txt, txt_loc, color)
-        return image#[..., ::-1]
-
+        return image
 
 if __name__ == "__main__":
     image = cv2.imread("./imgs/image.jpeg")

@@ -3,6 +3,7 @@ import cv2
 import json
 import ctypes
 import numpy as np
+import pandas as pd
 import tensorrt as trt
 import pycuda.driver as cuda
 import pycuda.autoinit  # This is needed for initializing CUDA driver
@@ -93,28 +94,31 @@ class Detector():
         self.stream.synchronize()
 
         output = self.host_outputs[0]
-        return output
+        return np.reshape(output, (-1, OUTPUT_LAYOUT))
 
 
     @timeit
-    def filter_prediction(self, output, img, conf_th=0.3, conf_class=[]):
-        img_h, img_w, _ = img.shape
-        boxes, confs, clss = [], [], []
-        for prefix in range(0, len(output), OUTPUT_LAYOUT):
-            conf = float(output[prefix+2])
-            if conf < conf_th:
-                continue
-            x1 = int(output[prefix+3] * img_w)
-            y1 = int(output[prefix+4] * img_h)
-            x2 = int(output[prefix+5] * img_w)
-            y2 = int(output[prefix+6] * img_h)
-            cls = int(output[prefix+1])
-            if len(conf_class) > 0 and cls not in conf_class:
-                continue
-            boxes.append((x1, y1, x2, y2))
-            confs.append(conf)
-            clss.append(cls)
-        return boxes, confs, clss
+    def filter_prediction(self, output, image, conf_th=0.3, conf_class=[]):
+        height, width = image.shape[:-1]
+        df = pd.DataFrame(
+                output,
+                columns=[
+                    '_', 'class_id', 'confidence', 'x1', 'y1', 'x2', 'y2'])
+        df = df.assign(
+                x1=lambda x: (x['x1'] * width).astype(int).clip(0),
+                y1=lambda x: (x['y1'] * height).astype(int).clip(0),
+                x2=lambda x: (x['x2'] * width).astype(int),
+                y2=lambda x: (x['y2'] * height).astype(int),
+                class_name=lambda x: (
+                    x['class_id'].astype(int).astype(str).replace(CLASS_NAMES)
+                    ),
+                )
+        df['label'] = (df['class_name'] + ': ' +
+                df['confidence'].astype(str).str.slice(stop=4))
+        df = df[df['confidence'] > conf_th]
+        if len(conf_class) > 0:
+            df = df[df['class_id'].isin(conf_class)]
+        return df
 
     def draw_boxes(self, image, df):
         for idx, box in df.iterrows():
@@ -131,7 +135,7 @@ if __name__ == "__main__":
 
     detector = Detector()
     output = detector.prediction(image)
-    boxes, confs, clss = detector.filter_prediction(output, image, conf_th=0.3)
-    print([(CLASS_NAMES[str(c)], prob) for (c, prob) in zip(clss, confs)])
-    image = detector.draw_boxes(image, boxes, confs, clss)
+    df = detector.filter_prediction(output, image, conf_th=0.3)
+    image = detector.draw_boxes(image, df)
+    print(df)
     cv2.imwrite("./imgs/outputcv.jpg", image)

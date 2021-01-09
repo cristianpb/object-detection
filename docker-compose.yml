@@ -12,8 +12,8 @@ services:
     environment:
       - BASEURL=${BASEURL}
       - PORT_NGINX=${PORT_NGINX}
-    ports:
-      - ${PORT_NGINX}:${PORT_NGINX}
+    #ports:
+    #  - ${PORT_NGINX}:${PORT_NGINX}
     # no port exposition in host mode
     network_mode: host
   redis:

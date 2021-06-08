@@ -1,6 +1,6 @@
 Flask==1.1.2
 opencv-python-headless==4.4.0.44
 pandas==1.1.4
-Pillow==8.0.1
+Pillow==8.2.0
 python-dotenv==0.15.0
 pyyaml==5.3.1

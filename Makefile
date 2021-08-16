@@ -16,15 +16,18 @@ config.yml:
 	cp config.yml.sample config.yml
 
 venv:
-	@echo "Installing dependencies for $(CAMERA)"
-	@if [ "${CAMERA}" = 'pi' ]; then \
-		sudo apt install python3-dotenv python3-pandas python3-picamera python3-flask python3-redis python3-pip; \
+	@echo "Installing dependencies for $(PLATFORM)"
+	@if [ "${PLATFORM}" = 'pi' ]; then \
+		sudo apt install -y python3-dotenv python3-pandas python3-picamera python3-flask python3-redis python3-pip; \
 		sudo pip3 install -e .; \
 		mkdir venv; \
-	elif [ "${CAMERA}" = 'jetson' ]; then \
-		sudo apt install python3-dotenv python3-pandas python3-flask python3-redis python3-pip; \
+	elif [ "${PLATFORM}" = 'jetson' ]; then \
+		sudo apt install -y python3-dotenv python3-redis python3-pip; \
+		sudo pip3 install pandas flask; \
 		sudo pip3 install Cython; \
-		sudo apt-get install protobuf-compiler libprotobuf-dev protobuf-compiler; \
+		sudo apt-get install -y protobuf-compiler libprotobuf-dev protobuf-compiler; \
+		export PATH="/usr/local/cuda/bin:$PATH"; \
+		export CUDA_INC_DIR="/usr/local/cuda/include"; \
 		pip3 install pycuda; \
 		sudo pip3 install -e .; \
 		mkdir venv; \
@@ -54,20 +57,20 @@ models/yolo/yolov3.weights:
 build: venv models/ssd_mobilenet/frozen_inference_graph.pb
 
 dev: .env config.yml dist build
-	@echo "Debug mode $(CAMERA) $(PORT)"
-	@if [ "${CAMERA}" = 'pi' ]; then \
+	@echo "Debug mode $(PLATFORM) $(PORT)"
+	@if [ "${PLATFORM}" = 'pi' ]; then \
 		DEBUG=1 FLASK_APP=backend/app.py flask run; \
-	elif [ "${CAMERA}" = 'jetson' ]; then \
-		DEBUG=1 FLASK_APP=backend/app.py flask run; \
+	elif [ "${PLATFORM}" = 'jetson' ]; then \
+		DEBUG=1 FLASK_APP=backend/app.py FLASK_DEBUG=1 flask run; \
 	else \
-		DEBUG=1 FLASK_APP=backend/app.py venv/bin/flask run; \
+		DEBUG=1 FLASK_APP=backend/app.py FLASK_DEBUG=1 venv/bin/flask run; \
 	fi
 
 up: .env config.yml dist build
-	@echo "Up mode $(CAMERA) $(PORT)"
-	@if [ "${CAMERA}" = 'pi' ]; then \
+	@echo "Up mode $(PLATFORM) $(PORT)"
+	@if [ "${PLATFORM}" = 'pi' ]; then \
 		DEBUG="" FLASK_APP=backend/app.py flask run; \
-	elif [ "${CAMERA}" = 'jetson' ]; then \
+	elif [ "${PLATFORM}" = 'jetson' ]; then \
 		DEBUG="" FLASK_APP=backend/app.py flask run; \
 	else \
 		DEBUG="" FLASK_APP=backend/app.py venv/bin/flask run; \

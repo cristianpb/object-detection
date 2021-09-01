@@ -11,12 +11,15 @@ services:
       - ./dist:/var/lib/www${BASEURL}:ro
     environment:
       - BASEURL=${BASEURL}
-      - PORT_NGINX=${PORT_NGINX}
-    #ports:
-    #  - ${PORT_NGINX}:${PORT_NGINX}
-    # no port exposition in host mode
-    network_mode: host
-  redis:
-    image: redis:alpine
-    container_name: ${APP}-redis
-    network_mode: host
+      - NGINX_PORT=${NGINX_PORT}
+      - APP_PORT=${APP_PORT}
+    networks:
+      - isolated_nw
+    ports:
+      - ${NGINX_PORT}:${NGINX_PORT}
+
+
+networks:
+  isolated_nw:
+    external:
+     name: isolated_nw

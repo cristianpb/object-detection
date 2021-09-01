@@ -4,6 +4,7 @@ include .env
 # this is usefull with most python apps in dev mode because if stdout is
 # buffered logs do not shows in realtime
 PYTHONUNBUFFERED=1
+PYTHONDONTWRITEBYTECODE=1
 export
 
 # compose command to merge production file and and dev/tools overrides
@@ -14,6 +15,10 @@ COMPOSE?=docker-compose -f docker-compose.yml
 
 config.yml:
 	cp config.yml.sample config.yml
+
+network:
+	@echo "Create network"
+	@docker network create isolated_nw 2> /dev/null; true
 
 venv:
 	@echo "Installing dependencies for $(PLATFORM)"
@@ -40,6 +45,9 @@ venv:
 dist:
 	git clone --single-branch --depth=1 --branch builds https://github.com/cristianpb/object-detection-frontend dist
 
+frontend:
+	git clone --branch master https://github.com/cristianpb/object-detection-frontend frontend
+
 push:
 	rsync -avz --exclude 'backend.egg-info' --exclude 'dist' --exclude '.env' --exclude 'git' --exclude 'imgs' --exclude 'models' --exclude '.mypy_cache' --exclude '.pytest_cache' --exclude 'venv' * jetson:~/object-detection/
 
@@ -56,25 +64,13 @@ models/yolo/yolov3.weights:
 
 build: venv models/ssd_mobilenet/frozen_inference_graph.pb
 
-dev: .env config.yml dist build
-	@echo "Debug mode $(PLATFORM) $(PORT)"
-	@if [ "${PLATFORM}" = 'pi' ]; then \
-		DEBUG=1 FLASK_APP=backend/app.py flask run; \
-	elif [ "${PLATFORM}" = 'jetson' ]; then \
-		DEBUG=1 FLASK_APP=backend/app.py FLASK_DEBUG=1 flask run; \
-	else \
-		DEBUG=1 FLASK_APP=backend/app.py FLASK_DEBUG=1 venv/bin/flask run; \
-	fi
+dev: .env config.yml dist build frontend
+	@echo "Listening on port: $(NGINX_PORT)"
+	@export EXEC_ENV=dev; $(COMPOSE) -f docker-compose-dev.yml up --build 
 
-up: .env config.yml dist build
-	@echo "Up mode $(PLATFORM) $(PORT)"
-	@if [ "${PLATFORM}" = 'pi' ]; then \
-		DEBUG="" FLASK_APP=backend/app.py flask run; \
-	elif [ "${PLATFORM}" = 'jetson' ]; then \
-		DEBUG="" FLASK_APP=backend/app.py flask run; \
-	else \
-		DEBUG="" FLASK_APP=backend/app.py venv/bin/flask run; \
-	fi
+up: network .env config.yml dist build
+	@echo "Listening on port: $(NGINX_PORT)"
+	@export EXEC_ENV=prod; $(COMPOSE) up -d
 
 heroku: dist models/ssd_mobilenet/frozen_inference_graph.pb config.yml
 	DEBUG="" FLASK_APP=backend/app.py flask run

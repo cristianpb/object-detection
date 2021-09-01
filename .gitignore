@@ -18,3 +18,4 @@ ssd_mobilenet.tar.gz
 *.log
 *.pyc
 *voc.so
+frontend

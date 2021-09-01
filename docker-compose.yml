@@ -38,6 +38,8 @@ services:
       - isolated_nw
     ports:
       - ${NGINX_PORT}:${NGINX_PORT}
+    depends_on:
+      - "backend"
 
 
 networks:

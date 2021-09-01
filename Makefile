@@ -72,6 +72,9 @@ up: network .env config.yml dist build
 	@echo "Listening on port: $(NGINX_PORT)"
 	@export EXEC_ENV=prod; $(COMPOSE) up -d
 
+down:
+	@$(COMPOSE) -f docker-compose-dev.yml down
+
 heroku: dist models/ssd_mobilenet/frozen_inference_graph.pb config.yml
 	DEBUG="" FLASK_APP=backend/app.py flask run
 

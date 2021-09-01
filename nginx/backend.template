@@ -1,5 +1,5 @@
 upstream backend{
-    server 127.0.0.1:5000;
+    server backend:${APP_PORT};
 }
 
 server {
@@ -7,16 +7,10 @@ server {
     server_name  _;
 
     gzip on;
-    gzip_types      text/plain application/xml image/jpeg image/jpg;
-    gzip_proxied    no-cache no-store private expired auth;
-    gzip_min_length 1000;
+    gzip_types      text/plain application/xml image/jpeg image/jpg text/css application/javascript application/json image/svg+xml;
+    gzip_comp_level 9;
+    etag on;
 
-    root /var/lib/www;
-    index index.html;
-
-    location ${BASEURL}/ {
-        try_files $uri $uri/ =404;
-    }
 
     location ~ ${BASEURL}/(api|imgs) {
         proxy_pass http://backend;
@@ -24,6 +18,23 @@ server {
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
     }
+
+    root /var/lib/www;
+    index index.html;
+
+    location ${BASEURL}/ {
+        try_files $uri $uri/ /index.html;
+    }
+    location ${BASEURL}/static/ {
+        add_header Cache-Control max-age=31536000;
+    }
+    location ${BASEURL}/index.html {
+        add_header Cache-Control no-cache;
+    }
+    #location ${BASEURL}/ {
+    #    try_files $uri $uri/ index.html;
+    #}
+
 }
 
 # vim:filetype=nginx

@@ -1,7 +1,28 @@
----
 version: '3.4'
 
 services:
+  backend:
+    image: ${APP}
+    container_name: ${APP}
+    build:
+      context: .
+      target: ${EXEC_ENV}
+      dockerfile: Dockerfile
+      args:
+        http_proxy: ${http_proxy}
+        https_proxy: ${https_proxy}
+        no_proxy: ${no_proxy}
+        APP_PORT: ${APP_PORT}
+        APP_PATH: /${APP}
+    environment:
+     - http_proxy=${http_proxy}
+     - https_proxy=${http_proxy}
+     - no_proxy=${no_proxy}
+     - APP_PORT=${APP_PORT}
+     - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}
+    networks:
+      - isolated_nw
+
   nginx:
     image: nginx
     container_name: ${APP}-nginx

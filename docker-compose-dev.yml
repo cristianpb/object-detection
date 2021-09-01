@@ -1,7 +1,39 @@
----
 version: '3.4'
 
 services:
+  backend:
+    volumes:
+      - ./backend:/${APP}/backend/
+      - ./tests:/${APP}/tests/
+      - ./dist:/${APP}/dist/
+      - ./models:/${APP}/models/
+      - ./config.yml:/${APP}/config.yml
+      - ./setup.py:/${APP}/setup.py
+    ports:
+      - ${APP_PORT}:${APP_PORT}
+
+  frontend:
+    image: ${APP}-frontend
+    container_name: ${APP}-frontend
+    build:
+      context: frontend
+      target: dev
+      dockerfile: Dockerfile
+      args:
+        http_proxy: ${http_proxy}
+        https_proxy: ${https_proxy}
+        no_proxy: ${no_proxy}
+        FRONTEND_PORT: 4200
+        APP_PATH: /${APP}
+    environment:
+     - http_proxy=${http_proxy}
+     - https_proxy=${http_proxy}
+     - no_proxy=${no_proxy}
+    networks:
+      - isolated_nw
+    volumes:
+      - ./frontend/src:/${APP}/src/
+
   nginx:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf

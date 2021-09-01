@@ -26,8 +26,8 @@ WIDTH = 320
 HEIGHT = 240
 IMAGE_FOLDER = 'imgs'
 load_dotenv('.env')
-if os.getenv('PORT'):
-    PORT = int(str(os.getenv('PORT')))
+if os.getenv('APP_PORT'):
+    PORT = int(str(os.getenv('APP_PORT')))
 else:
     PORT=5000
 

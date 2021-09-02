@@ -13,7 +13,7 @@ services:
       - ${APP_PORT}:${APP_PORT}
 
   frontend:
-    image: ${APP}-frontend
+    image: cristianpb/${APP}-frontend
     container_name: ${APP}-frontend
     build:
       context: frontend

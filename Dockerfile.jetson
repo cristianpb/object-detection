@@ -1,0 +1,62 @@
+########
+#  dev #
+########
+FROM nvcr.io/nvidia/l4t-base:r32.6.1 as dev
+
+ARG APP_PATH
+ARG APP_PORT
+
+WORKDIR /${APP_PATH}
+
+COPY LICENSE ./
+COPY README.md ./
+COPY requirements.txt ./
+COPY setup.py ./
+COPY config.yml ./
+
+VOLUME /${APP_PATH}/backend
+VOLUME /${APP_PATH}/tests
+VOLUME /${APP_PATH}/dist
+VOLUME /${APP_PATH}/models
+
+ENV PATH="/usr/local/cuda/bin:$PATH"
+ENV CUDA_INC_DIR="/usr/local/cuda/include"
+ENV TZ=Europe/Paris
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+RUN apt-get update && \
+        apt-get install -y --fix-missing python3-pip python3-opencv && \
+        pip3 install --upgrade pip && \
+        pip3 install --no-cache-dir -r requirements.txt && \
+        pip3 install Cython && \
+        apt-get install -y protobuf-compiler libprotobuf-dev protobuf-compiler && \
+        pip3 install pycuda \
+
+# Expose the listening port of your app
+EXPOSE ${APP_PORT}
+
+ENV FLASK_APP=backend/app.py
+ENV DEBUG=1
+
+CMD ["flask", "run", "--host=0.0.0.0"]
+
+################################
+# Step 2: "production" target #
+################################
+FROM dev as prod
+
+ADD backend ./backend
+ADD tests ./tests
+ADD dist ./dist
+ADD models ./models
+
+COPY LICENSE ./
+COPY README.md ./
+COPY requirements.txt ./
+COPY setup.py ./
+COPY config.yml ./
+
+ENV DEBUG=
+
+CMD ["flask", "run", "--host=0.0.0.0"]
+
+# vim:filetype=dockerfile

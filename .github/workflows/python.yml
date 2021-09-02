@@ -68,7 +68,7 @@ jobs:
           file: ./Dockerfile.amd64
           platforms: linux/amd64
           push: true
-          tags: cristianpb/object-detection-amd64:latest
+          tags: cristianpb/object-detection:amd64
           target: prod
           build-args: |
             APP_PORT:5000
@@ -81,7 +81,7 @@ jobs:
           file: ./Dockerfile.jetson
           platforms: linux/arm64
           push: true
-          tags: cristianpb/object-detection-jetson:latest
+          tags: cristianpb/object-detection:jetson
           target: prod
           build-args: |
             APP_PORT:5000

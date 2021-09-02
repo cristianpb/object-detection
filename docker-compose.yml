@@ -2,12 +2,12 @@ version: '3.4'
 
 services:
   backend:
-    image: cristianpb/${APP}-${PLATFORM}
+    image: cristianpb/${APP}-${PLATFORM:-amd64}
     container_name: ${APP}
     build:
       context: .
       target: ${EXEC_ENV}
-      dockerfile: Dockerfile.${PLATFORM}
+      dockerfile: Dockerfile.${PLATFORM:-amd64}
       args:
         http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}

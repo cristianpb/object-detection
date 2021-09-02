@@ -29,13 +29,15 @@ RUN apt-get update && \
         pip3 install --no-cache-dir -r requirements.txt && \
         pip3 install Cython && \
         apt-get install -y protobuf-compiler libprotobuf-dev protobuf-compiler && \
-        pip3 install pycuda \
+        pip3 install pycuda==2020.1
 
 # Expose the listening port of your app
 EXPOSE ${APP_PORT}
 
 ENV FLASK_APP=backend/app.py
 ENV DEBUG=1
+ENV LC_ALL=C.UTF-8
+ENV LANG=C.UTF-8
 
 CMD ["flask", "run", "--host=0.0.0.0"]
 

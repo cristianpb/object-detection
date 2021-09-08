@@ -2,7 +2,7 @@ version: '3.4'
 
 services:
   backend:
-    image: cristianpb/${APP}-${PLATFORM:-amd64}
+    image: cristianpb/${APP}:${PLATFORM:-amd64}
     container_name: ${APP}
     build:
       context: .
@@ -22,6 +22,8 @@ services:
      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}
     networks:
       - isolated_nw
+    devices:
+      - "/dev/video0:/dev/video0"
 
   nginx:
     image: nginx

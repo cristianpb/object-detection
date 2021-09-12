@@ -24,6 +24,8 @@ services:
       - isolated_nw
     devices:
       - "/dev/video0:/dev/video0"
+    volumes:
+      - ./imgs:/${APP}/imgs/
 
   nginx:
     image: nginx

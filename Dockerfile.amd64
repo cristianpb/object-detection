@@ -18,6 +18,7 @@ VOLUME /${APP_PATH}/backend
 VOLUME /${APP_PATH}/tests
 VOLUME /${APP_PATH}/dist
 VOLUME /${APP_PATH}/models
+VOLUME /${APP_PATH}/imgs
 
 RUN pip install --no-cache-dir -r requirements.txt
 
@@ -38,6 +39,7 @@ ADD backend ./backend
 ADD tests ./tests
 ADD dist ./dist
 ADD models ./models
+VOLUME /${APP_PATH}/imgs
 
 COPY LICENSE ./
 COPY README.md ./
@@ -48,3 +50,5 @@ COPY config.yml ./
 ENV DEBUG=
 
 CMD ["flask", "run", "--host=0.0.0.0"]
+
+# vim:filetype=dockerfile

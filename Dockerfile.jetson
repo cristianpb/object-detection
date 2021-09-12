@@ -18,6 +18,7 @@ VOLUME /${APP_PATH}/backend
 VOLUME /${APP_PATH}/tests
 VOLUME /${APP_PATH}/dist
 VOLUME /${APP_PATH}/models
+VOLUME /${APP_PATH}/imgs
 
 ENV PATH="/usr/local/cuda/bin:$PATH"
 ENV CUDA_INC_DIR="/usr/local/cuda/include"
@@ -51,6 +52,7 @@ ADD backend ./backend
 ADD tests ./tests
 ADD dist ./dist
 ADD models ./models
+VOLUME /${APP_PATH}/imgs
 
 COPY LICENSE ./
 COPY README.md ./

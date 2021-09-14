@@ -73,6 +73,19 @@ jobs:
           build-args: |
             APP_PORT:5000
             APP_PATH:/object-detection
+      - name: 🚀 Build armv7 (raspberry) and push
+        #if: github.ref == 'refs/heads/master'
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile.armv7
+          platforms: linux/armv7
+          push: true
+          tags: cristianpb/object-detection:armv7
+          target: prod
+          build-args: |
+            APP_PORT:5000
+            APP_PATH:/object-detection
       - name: 🚀 Build amr64 (jetson) and push
         #if: github.ref == 'refs/heads/master'
         uses: docker/build-push-action@v2

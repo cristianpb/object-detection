@@ -26,6 +26,8 @@ services:
       - "/dev/video0:/dev/video0"
     volumes:
       - ./imgs:/${APP}/imgs/
+      - ./models:/${APP}/models/
+      - ./config.yml:/${APP}/config.yml
 
   nginx:
     image: nginx

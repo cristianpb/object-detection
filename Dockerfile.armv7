@@ -52,7 +52,7 @@ FROM dev as prod
 ADD backend ./backend
 ADD tests ./tests
 ADD dist ./dist
-ADD models ./models
+VOLUME /${APP_PATH}/models
 VOLUME /${APP_PATH}/imgs
 
 COPY LICENSE ./

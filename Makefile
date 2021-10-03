@@ -73,7 +73,7 @@ up: network .env config.yml dist build
 	@export EXEC_ENV=prod; $(COMPOSE) up -d
 
 down:
-	@$(COMPOSE) -f docker-compose-dev.yml down
+	@$(COMPOSE) down --remove-orphan
 
 heroku: dist models/ssd_mobilenet/frozen_inference_graph.pb config.yml
 	DEBUG="" FLASK_APP=backend/app.py flask run
